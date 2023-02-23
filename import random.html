@@ -1,0 +1,17 @@
+import random
+print("猜数字游戏开始！")
+# 生成一个1-100之间的随机数
+number = random.randint(1, 100)
+# 用户猜测的次数
+guess_times = 0
+while True:
+    guess_times += 1
+    guess_number = int(input("请输入你猜的数字："))
+    if guess_number > number:
+        print("你猜的数字大了！")
+    elif guess_number < number:
+        print("你猜的数字小了！")
+    else:
+        print("恭喜你猜对了！")
+        break
+print("你一共猜了{}次".format(guess_times))
