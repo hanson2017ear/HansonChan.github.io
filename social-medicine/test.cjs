@@ -1,0 +1,13 @@
+const assert=require('node:assert/strict'),c=require('./calc.js');
+const near=(a,b)=>assert.ok(Math.abs(a-b)<1e-8,`${a} != ${b}`);
+near(c.qaly([{years:65.2,weight:1},{years:4.5,weight:.59},{years:1.9,weight:.34}]).qaly,68.501);
+near(c.qaly([{years:1,weight:-.2}]).qaly,-.2);
+const original=[.4,.6,1,2.5,.9,.5,1.3],improved=[.4,.6,1,1,.9,.5,1];
+near(c.composite(original).r,1.908);near(c.composite(improved).r,.108);
+near(c.composite([2,3]).r,4);near(c.composite([.5,.6]).r,.3);near(c.composite([1]).r,1);near(c.composite([0,2]).r,1);
+near(c.risk(original,1877).d,3585.07);near(c.risk(improved,1877).d,206.47);near(c.risk(original,1877,false).d,3581.316);
+near(c.interpolate(192,180,.5,220,1),.65);near(c.interpolate(180,180,.5,220,1),.5);
+const red=c.reduction(3585.07,206.47,7167.45);near(red.delta,3378.6);near(red.contribution,3378.6/7167.45*100);near(red.within,3378.6/3585.07*100);
+assert.deepEqual(c.eqState([1,1,2,2,3],75),{code:'11223',vas:75});
+assert.throws(()=>c.qaly([{years:'',weight:1}]));assert.throws(()=>c.qaly([{years:-1,weight:1}]));assert.throws(()=>c.qaly([{years:1,weight:1.1}]));assert.throws(()=>c.qaly([]));assert.throws(()=>c.composite([]));assert.throws(()=>c.composite([-1]));assert.throws(()=>c.composite(['foo']));assert.throws(()=>c.interpolate(230,180,.5,220,1));assert.throws(()=>c.interpolate(180,180,.5,180,1));assert.throws(()=>c.reduction(100,20,50));assert.throws(()=>c.eqState([1,1,1,1,4],75));assert.throws(()=>c.eqState([1,1,1,1,1],101));
+console.log('Passed: classroom examples, rounding, denominators, boundaries and invalid input.');
