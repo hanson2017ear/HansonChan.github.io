@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="填写WHOQOL-100问卷，记录个人健康危险因素、对照生活习惯，并复习HRA与QALY课堂计算。">
   <title>社会医学课程练习</title>
-  <link rel="stylesheet" href="style.css?v=20261024p">
+  <link rel="stylesheet" href="style.css?v=20261024r">
 </head>
 <body>
 <a class="skip" href="#workspace">跳到计算区</a>
@@ -57,11 +57,22 @@
     <div class="intro"><div><p class="kicker">资料收集 → 逐项评价 → 选定目标 → 再次记录</p><h2>健康危险因素评价</h2><p>先填自己的生活情况，看看哪些习惯值得保持、哪些可以调整。想核对课上的危险分数和评价年龄，可以切换到课堂例题。</p></div><div class="intro-note">个人记录在浏览器内计算<br>不上传填写的资料</div></div>
     <div class="hra-switch" role="group" aria-label="选择危险因素评价方式"><button id="hra-personal-tab" class="active" aria-pressed="true" aria-controls="hra-personal">填写我的资料</button><button id="hra-example-tab" aria-pressed="false" aria-controls="hra-classroom">课堂例题</button></div>
     <div id="hra-personal">
-      <div class="toolbar"><button id="personal-save" class="primary" disabled>保存这份资料</button><label class="file-button">导入上次资料<input id="personal-import" type="file" accept=".json,application/json"></label><button id="personal-jump">查看我的评价</button><button id="personal-clear">重新填写</button></div>
+      <div class="toolbar"><button id="personal-save" class="primary" disabled>保存这份资料</button><label class="file-button">导入上次资料<input id="personal-import" type="file" accept=".json,application/json"></label><button id="personal-jump">查看个人评价表</button><button id="personal-clear">重新填写</button></div>
       <p id="personal-status" class="help" role="status">按最近一周的通常情况填写；体检值按最近一次报告记录。不清楚的项目可以留空，离开前请保存。</p>
       <div class="personal-layout"><div><form id="personal-form" novalidate aria-label="个人健康危险因素资料"></form><details class="process"><summary>看看模拟填法</summary><p class="help">这是一份虚构的大学生记录，只用于了解页面怎样评价，不代表你的情况。</p><button id="personal-demo" type="button">载入模拟资料</button></details></div>
-        <aside class="personal-results" aria-labelledby="personal-result-title"><p class="kicker">我的评价</p><h3 id="personal-result-title" tabindex="-1">填写后在这里看结果</h3><p id="personal-error" class="error" role="status"></p><div id="personal-summary" aria-live="polite"></div><div id="personal-measures"></div><div id="personal-habits"></div><div id="personal-comparison" class="help"></div><div class="toolbar compact"><button id="personal-reference" disabled>保留本次，之后作对照</button><button id="personal-unreference" hidden>取消对照</button></div><div id="personal-next"></div><div id="personal-print-data"></div><p class="marginal-note">项数只用于核对习惯。它<b>不是标准风险量表的总分，不能换算成患病概率</b>；各项也不代表同等风险。</p></aside>
+        <aside class="personal-results" aria-labelledby="personal-result-title"><p class="kicker">结果速览</p><h3 id="personal-result-title" tabindex="-1">填写后在这里看结果</h3><p id="personal-error" class="error" role="status"></p><div id="personal-summary" aria-live="polite"></div><div id="personal-measures"></div><div id="personal-comparison" class="help"></div><div class="toolbar compact"><button id="personal-reference" disabled>保留本次，之后作对照</button><button id="personal-unreference" hidden>取消对照</button></div><div id="personal-next"></div><div id="personal-print-data"></div><p class="marginal-note">项数只用于核对习惯。它<b>不是标准风险量表的总分，不能换算成患病概率</b>；各项也不代表同等风险。</p></aside>
       </div>
+      <section id="personal-report" class="personal-report" aria-labelledby="personal-report-title">
+        <div class="report-heading"><div><p class="kicker">根据本次填写生成 · 随资料更新</p><h3 id="personal-report-title" tabindex="-1">个人危险因素评价表</h3><p id="personal-report-meta" class="help"></p></div><div class="toolbar"><button id="personal-csv" class="primary" disabled>下载评价表 CSV</button><button id="personal-print" disabled>打印 / 保存为PDF</button><button id="personal-edit">返回填写区</button></div></div>
+        <p id="personal-report-empty" class="report-empty">填写资料或导入保存的文件后，这里会生成你的评价表。不清楚的项目可以留空，表中会保留“待补资料”。</p>
+        <div id="personal-report-content" hidden>
+          <div class="report-visuals"><figure id="personal-habit-figure" aria-labelledby="personal-habit-title"><figcaption id="personal-habit-title">8项生活习惯的参照情况</figcaption><div id="personal-habit-chart"></div><p class="help">只统计有氧活动、力量训练、睡眠、蔬果、盐、烟草、二手烟和饮酒。体检与社会环境另列，不计入这8项。</p></figure><figure id="personal-activity-figure" aria-labelledby="personal-activity-title"><figcaption id="personal-activity-title">每周有氧活动量</figcaption><div id="personal-activity-chart"></div><p class="help">统一换算为中等强度等效分钟：中等强度分钟＋2×较大强度分钟。单位：分钟/周。</p></figure></div>
+          <p class="report-table-note">“需要留意”表示值得进一步了解或调整，不等同于疾病诊断。体检数值需结合原报告与个别情况解释。</p>
+          <div class="risk-table-wrap"><table id="personal-risk-table" class="risk-table"><caption>个人危险因素逐项评价</caption><thead><tr><th scope="col">项目</th><th scope="col">本次资料</th><th scope="col">参照与依据</th><th scope="col">本次评价</th><th scope="col">可以怎样做</th><th scope="col">来源</th></tr></thead><tbody id="personal-risk-rows"></tbody></table></div>
+          <div id="personal-report-plan" class="report-plan"></div>
+          <p class="help report-limit">按本人的资料逐项对照，不提供综合患病概率。缺项不补0，也不把未填的项目当成健康。</p>
+        </div>
+      </section>
       <details class="process"><summary>这些结果是怎样算出来的？</summary><p>个人填写部分沿用课堂上“收集因素—评价—制定计划—复评”的思路。生活习惯参照WHO和国内公开资料；课堂历史模型的死亡率、危险系数和评价年龄不套用于个人记录。</p><div class="formula">BMI＝体重（kg）÷身高（m）²<br>中等强度等效活动量＝每周中等强度分钟＋2×每周较大强度分钟<br>8项习惯：有氧活动、力量训练、睡眠、蔬果、盐、吸烟、二手烟、饮酒</div><p class="help">已知、未知分别列出，不为缺项补分。运动和饮食目标只作18—64岁一般成年人的日常参照；孕产期、医生要求限制活动等情况需采用个别建议。睡眠、饮酒等只记录近期情况，不能据此诊断睡眠障碍或酒精使用障碍。体检指标另列，不计入习惯项数。</p><ul id="personal-sources" class="personal-sources"></ul></details>
     </div>
     <div id="hra-classroom" hidden>
@@ -100,5 +111,5 @@
   </section>
   <footer><span>社会医学课程练习 · 2026.10</span><span>答案不上传，离开前请保存。</span></footer>
 </main>
-<script src="course-data.js?v=20261024"></script><script src="whoqol-questions.js?v=20261024"></script><script src="calc.js?v=20261024"></script><script src="personal-hra.js?v=20261024p"></script><script src="app.js?v=20261024p"></script>
+<script src="course-data.js?v=20261024"></script><script src="whoqol-questions.js?v=20261024"></script><script src="calc.js?v=20261024"></script><script src="personal-hra.js?v=20261024r"></script><script src="app.js?v=20261024p"></script>
 </body></html>

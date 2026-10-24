@@ -123,6 +123,43 @@
     return {values,applicable,scopeMessage,habits,met,review,unknown:8-met-review,activity,bmi,measurements};
   }
   function display(id,value){const f=byId[id];return !has(value)?'未填':f.type==='select'?f.options.find(o=>o[0]===value)[1]:value+(f.unit?' '+f.unit:'')}
+  const statusLabels={met:'达到参照',review:'需要留意',unknown:'待补资料',record:'仅作记录',outside:'需个别评价'};
+  function evaluationRows(input){
+    const r=analyse(input),v=r.values,rows=[];
+    const add=(group,id,label,value,criterion,status,assessment,action,source=null)=>rows.push({group,id,label,value,criterion,status,assessment,action,source});
+    r.habits.forEach(h=>{
+      const known=h.id==='activity'?r.activity!==null:has(v[h.id]);
+      const status=!known?'unknown':!r.applicable?'outside':h.status;
+      const value=h.id==='activity'&&known?fmt(r.activity)+'分钟/周（'+v.moderate+'＋2×'+v.vigorous+'）':h.value;
+      add('生活方式',h.id,h.label,value,h.criterion,status,statusLabels[status],!known?'有可靠记录时再补充，不用猜数。':!r.applicable?r.scopeMessage:h.status==='met'?'继续保持，并结合实际感受和生活变化复看。':h.action,h.source);
+    });
+    add('生活方式','sitting','久坐时间',display('sitting',v.sitting),'建议减少久坐，以适当活动替代部分久坐时间。本工具不自设小时数界值。',has(v.sitting)?'record':'unknown',has(v.sitting)?'记录活动环境':'待补资料',has(v.sitting)?'留意哪些时段连续坐得较久，在合适的时候起身活动。':'了解通常一天的清醒久坐时间后再补。','activity');
+    const body=(id,label,known,value,criterion,status,assessment,action,source)=>{
+      const finalStatus=!known?'unknown':!r.applicable?'outside':status;
+      add('体格与体检',id,label,value,criterion,finalStatus,!known?'待补资料':!r.applicable?'不套用统一成人参照':assessment,!known?'有现成资料时再补充，不需为完成本页专门检查。':!r.applicable?r.scopeMessage:action,source);
+    };
+    const bmiCategory=r.bmi===null?'':r.bmi<18.5?'体重过低':r.bmi<24?'正常体重范围':r.bmi<28?'超重范围':'肥胖范围';
+    body('bmi','体重指数 BMI',r.bmi!==null,r.bmi===null?'身高：'+display('height',v.height)+'；体重：'+display('weight',v.weight):fmt(r.bmi)+' kg/m²；'+v.weight+' kg / '+v.height+' cm','中国成人：<18.5为体重过低；18.5—<24为正常范围；24—<28为超重；≥28为肥胖。',r.bmi>=18.5&&r.bmi<24?'met':'review',bmiCategory,r.bmi<18.5?'先了解饮食、近期体重变化及身体情况，不把降低体重作为目标。':r.bmi<24?'保持规律饮食和活动，结合腰围与体重变化复看。':'结合腰围、体脂和既往情况商量目标，逐步调整饮食与活动。','weight');
+    const waistKnown=has(v.waist)&&has(v.sex),waistPre=v.sex==='male'?85:80,waistCutoff=v.sex==='male'?90:85;
+    body('waist','腰围',waistKnown,has(v.waist)?v.waist+' cm'+(!v.sex?'（未选择判定所用性别）':''):'未填','男性85—<90 cm、女性80—<85 cm为中心型肥胖前期；男性≥90 cm、女性≥85 cm达到中心型肥胖参照。',Number(v.waist)>=waistPre?'review':'met',Number(v.waist)>=waistCutoff?'达到中心型肥胖腰围参照':Number(v.waist)>=waistPre?'处于前期腰围范围':'低于前期腰围参照','核对测量位置，并结合BMI和近期变化解释。','weight');
+    const bpKnown=has(v.sbp)&&has(v.dbp)&&has(v.bpContext),high=Number(v.sbp)>=180||Number(v.dbp)>=110;
+    const above=Number(v.sbp)>=(v.bpContext==='homeAverage'?135:140)||Number(v.dbp)>=(v.bpContext==='homeAverage'?85:90);
+    const bpCriterion=v.bpContext==='homeAverage'?'连续5—7天规范家庭测量的平均值，以135/85 mmHg为升高就诊参照。':v.bpContext==='clinic'?'诊室以140/90 mmHg为升高就诊参照；不能凭本页一次记录确诊。':v.bpContext==='home'?'单次家庭读数不直接判定高血压；需要了解规范测量与多次记录。':'先区分诊室、单次家庭与连续家庭平均值，再采用对应参照。';
+    body('bp','血压',bpKnown,(v.sbp||'—')+'/'+(v.dbp||'—')+' mmHg'+(v.bpContext?'；'+display('bpContext',v.bpContext):''),bpCriterion,high||v.bpContext!=='home'&&above?'review':'record',high?'读数明显升高':v.bpContext==='home'?'单次读数，仅作记录':above?'达到升高就诊参照':'未达升高就诊参照',high?'安静休息后复测，仍明显升高时及时就医；伴胸痛、呼吸困难等症状时立即就医。':above&&v.bpContext!=='home'?'按规范进一步复核，并结合既往情况和医生的个别目标判断，不自行调整药物。':'保留测量方式与日期，结合连续记录和个别情况复看。','bp');
+    for(const [id,label,criterion] of [['glucose','空腹血糖','结合原报告、空腹条件、既往诊断及用药解释，不根据一次检测诊断糖尿病。'],['cholesterol','总胆固醇','需结合LDL-C、其他危险因素与个别目标，不用总胆固醇一项判断健康。']]){
+      const known=has(v[id]);add('体格与体检',id,label,display(id,v[id]),criterion,known?'record':'unknown',known?'按原报告核对':'待补资料',known?'保留原报告与检测日期；有疑问时与专业人员核对。':'已有报告时再补充，注意mmol/L单位。');
+    }
+    add('家庭与社会环境','family','家族史',display('family',v.family),'记录父母或兄弟姐妹的心血管疾病、糖尿病史，不换算为自编遗传风险分。',has(v.family)?'record':'unknown',v.family==='yes'?'有家族史，供综合判断':v.family==='no'?'目前自述未发现':'待补资料',v.family==='yes'?'咨询时说明亲属患病种类与大致年龄；家族史不属于个人做得好或不好。':'不清楚可以留空，以可靠信息为准。');
+    add('家庭与社会环境','stress','压力与日常生活',display('stress',v.stress),'根据本人描述了解影响程度，不作为心理量表或疾病诊断。',!v.stress?'unknown':v.stress==='impact'?'review':'record',!v.stress?'待补资料':v.stress==='impact'?'已影响日常生活':'保留本人的感受',v.stress==='impact'?'可以和信任的人、辅导员或校内咨询人员谈谈，了解可用支持。':'记录压力来源及其变化，必要时再作进一步了解。');
+    add('家庭与社会环境','support','社会支持',display('support',v.support),'了解有没有可获得的同伴、家庭或学校支持，不把支持不足归结为个人意志。',!v.support?'unknown':v.support==='no'?'review':'record',!v.support?'待补资料':v.support==='no'?'支持暂时不足':'记录现有支持',v.support==='no'?'尝试邀请同伴一起行动，了解学校场地、食堂与健康咨询服务。':'把能提供具体帮助的人或服务写进自己的行动计划。');
+    return rows;
+  }
+  function tableCsv(input,mode='自行填写'){
+    const r=analyse(input),cell=value=>{let s=String(value??'');if(/^[=+\-@\t\r]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"'};
+    const rows=[['记录日期','年龄','资料标记','判定所用性别','适用情况','分类','项目','本次资料','参照与依据','本次评价','可以怎样做','来源']];
+    evaluationRows(r.values).forEach(x=>rows.push([r.values.recordDate,r.values.age,mode,display('sex',r.values.sex),display('scope',r.values.scope),x.group,x.label,x.value,x.criterion,x.assessment,x.action,x.source?sources[x.source].url:'本次自述或本人报告；不作独立量表计分']));
+    return rows.map(row=>row.map(cell).join(',')).join('\r\n');
+  }
   function validateSnapshot(data){
     if(!data||data.kind!=='social-medicine-personal-hra'||data.version!==1)throw Error('请导入从本页保存的个人资料JSON文件');
     const values=validate(data.values),reference=data.reference===null||data.reference===undefined?null:validate(data.reference);
@@ -139,8 +176,48 @@
   function read(){return Object.fromEntries(fields.map(f=>[f.id,$('personal-'+f.id).value]))}
   function apply(values){fields.forEach(f=>{$('personal-'+f.id).value=values[f.id]||''});state.values={...values};render()}
   function confirmReplace(){return !(filled()||state.reference)||root.confirm('当前资料和对照会被替换。需要保留的话，请先保存。继续吗？')}
+  function renderReport(){
+    for(const id of ['personal-risk-rows','personal-habit-chart','personal-activity-chart','personal-report-plan'])$(id).replaceChildren();
+    const ready=!!state.result&&filled(),r=state.result;
+    $('personal-report-content').hidden=!ready;$('personal-report-empty').hidden=ready;
+    $('personal-csv').disabled=!ready;$('personal-print').disabled=!ready;
+    $('personal-report-meta').textContent=ready?[r.values.recordDate?'记录日期：'+r.values.recordDate:'记录日期未填',has(r.values.age)?r.values.age+'岁':'年龄未填',r.values.sex?display('sex',r.values.sex):'判定所用性别未填',display('scope',r.values.scope),'资料来源：'+state.mode].join(' · '):'';
+    $('personal-report-empty').textContent=state.result?'填写资料或导入保存的文件后，这里会生成你的评价表。不清楚的项目可以留空，表中会保留“待补资料”。':'请先核对上方输入，评价表暂不显示，以免沿用旧结果。';
+    if(!ready)return;
+    if(!r.applicable)$('personal-habit-chart').append(el('p',r.scopeMessage,'help'));
+    else{
+      const chart=el('div','','habit-composition'),ring=el('div','','habit-donut');
+      const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 160 160');svg.setAttribute('aria-hidden','true');
+      let offset=0;const segments=[['met',r.met,'达到参照'],['review',r.review,'需要留意'],['unknown',r.unknown,'待补资料']];
+      for(const [status,count]of segments){if(!count)continue;const c=document.createElementNS(svg.namespaceURI,'circle');for(const [k,v]of Object.entries({cx:80,cy:80,r:62,pathLength:8,fill:'none','stroke-width':18,'stroke-dasharray':count+' '+(8-count),'stroke-dashoffset':-offset,transform:'rotate(-90 80 80)',class:'donut-segment '+status}))c.setAttribute(k,v);svg.append(c);offset+=count}
+      ring.setAttribute('role','img');ring.setAttribute('aria-label','8项生活习惯：'+r.met+'项达到参照，'+r.review+'项需要留意，'+r.unknown+'项待补资料');
+      const center=el('div','','donut-center');center.append(el('strong',r.met+' / 8'),el('span','项达到参照'));ring.append(svg,center);chart.append(ring);
+      const legend=el('div','','composition-legend');segments.forEach(([status,count,label])=>{const row=el('div','','composition-key '+status);row.append(el('span',label),el('strong',count+' 项'));legend.append(row)});chart.append(legend);$('personal-habit-chart').append(chart);
+    }
+    if(!r.applicable)$('personal-activity-chart').append(el('p','保留活动量记录，暂不套用一般成年人的统一参照。','help'));
+    else{
+      const previous=state.reference&&state.mode.includes('模拟')===state.referenceMode.includes('模拟')?analyse(state.reference):null;
+      const past=previous?.applicable?previous.activity:null,known=[r.activity,past].filter(v=>v!==null),max=Math.ceil(Math.max(300,...known)/50)*50;
+      const chart=$('personal-activity-chart');
+      for(const [label,value,cls]of [['本次',r.activity,'current'],...(past!==null?[['上次',past,'previous']]:[])]){
+        const line=el('div','','activity-row '+cls),heading=el('div','','activity-row-heading');heading.append(el('span',label),el('strong',value===null?'待补两种强度的分钟数':fmt(value)+' 分钟'));line.append(heading);
+        const track=el('div','','activity-track'),target=el('span','','activity-target');target.style.left=150/max*100+'%';target.setAttribute('aria-hidden','true');track.append(target);
+        if(value!==null){const bar=el('div','','activity-fill');bar.style.width=value/max*100+'%';track.append(bar)}else track.classList.add('missing');line.append(track);chart.append(line);
+      }
+      const axis=el('div','','activity-axis');axis.append(el('span','0'),el('span',fmt(max)+' 分钟'));chart.append(axis,el('p','竖线：每周150分钟中等强度等效活动的参照。','help'));
+    }
+    let group='';
+    evaluationRows(r.values).forEach(x=>{
+      if(x.group!==group){group=x.group;const row=el('tr','','risk-group'),th=el('th',group);th.colSpan=6;th.scope='rowgroup';row.append(th);$('personal-risk-rows').append(row)}
+      const row=el('tr','','risk-row '+x.status);row.dataset.factor=x.id;
+      const label=el('th',x.label);label.scope='row';row.append(label);
+      for(const [key,heading]of [['value','本次资料'],['criterion','参照与依据'],['assessment','本次评价'],['action','可以怎样做']]){const cell=el('td');cell.dataset.label=heading;cell.append(el(key==='assessment'?'span':'div',x[key],key==='assessment'?'risk-status '+x.status:''));row.append(cell)}
+      const source=el('td');source.dataset.label='来源';if(x.source){const a=link(x.source);a.textContent='查看原文';a.setAttribute('aria-label',x.label+'：'+sources[x.source].name);source.append(a)}else source.append(el('small','本次自述或本人报告；不作独立量表计分'));row.append(source);$('personal-risk-rows').append(row);
+    });
+    if(r.values.plan||r.values.reviewDate){$('personal-report-plan').append(el('h4','我的下一步'));if(r.values.plan)$('personal-report-plan').append(el('p',r.values.plan));if(r.values.reviewDate)$('personal-report-plan').append(el('p','计划复评：'+r.values.reviewDate,'help'))}
+  }
   function render(){
-    const out=$('personal-summary');out.replaceChildren();$('personal-habits').replaceChildren();$('personal-measures').replaceChildren();$('personal-next').replaceChildren();$('personal-comparison').replaceChildren();$('personal-print-data').replaceChildren();$('personal-error').textContent='';state.result=null;
+    const out=$('personal-summary');out.replaceChildren();$('personal-measures').replaceChildren();$('personal-next').replaceChildren();$('personal-comparison').replaceChildren();$('personal-print-data').replaceChildren();$('personal-error').textContent='';state.result=null;
     try{
       state.result=analyse(state.values);const r=state.result;
       $('personal-result-title').textContent=filled()?'这次记录的情况':'填写后在这里看结果';
@@ -151,11 +228,6 @@
       }else out.append(el('p',r.scopeMessage,'help'));
       out.append(el('p','资料来源：'+state.mode,'help'));
       if(state.mode.includes('模拟'))out.append(el('p','当前是模拟资料，不能写成自己的调查结果。','personal-example-note'));
-      r.habits.forEach(h=>{
-        const row=el('div','','habit-row '+h.status),head=el('div','','habit-row-heading');
-        head.append(el('b',h.label),el('span',r.applicable?({met:'达到参照',review:'可再调整',unknown:'待补资料'})[h.status]:'只作记录','habit-status'));row.append(head,el('p',h.value));
-        const detail=el('details'),summary=el('summary','参照与依据');detail.append(summary,el('p',h.criterion,'help'),link(h.source));row.append(detail);$('personal-habits').append(row);
-      });
       r.measurements.forEach(m=>{const box=el('div','','personal-measure');box.append(el('span',m.title,'help'),el('strong',m.value),el('p',m.text,'help'));if(m.steps)box.append(el('p',m.steps,'steps'));if(m.source)box.append(link(m.source));$('personal-measures').append(box)});
       if(state.reference){
         const previous=analyse(state.reference);$('personal-comparison').append(el('h4','与保留的那次记录比较'));
@@ -179,7 +251,7 @@
       if(state.values.family==='yes')$('personal-next').append(el('p','有家族史值得在健康咨询时说明，但不能仅凭“有/无”估算遗传风险，也不把它当作做得好或不好的一项。','help'));
       if(filled()){$('personal-print-data').append(el('h4','本次填写的资料'));fields.filter(f=>has(state.values[f.id])).forEach(f=>$('personal-print-data').append(el('p',f.label+'：'+display(f.id,state.values[f.id]),'help')))}
     }catch(e){$('personal-error').textContent=e.message;out.append(el('p','先核对输入，结果暂不显示，避免保留上一份数值。','help'))}
-    $('personal-save').disabled=!filled()||!state.result;$('personal-reference').disabled=!filled()||!state.result;
+    renderReport();$('personal-save').disabled=!filled()||!state.result;$('personal-reference').disabled=!filled()||!state.result;
     $('personal-unreference').hidden=!state.reference;changed();
   }
   function setView(view){
@@ -193,7 +265,7 @@
     const r=state.result,lines=['个人健康危险因素记录','资料来源：'+state.mode,'适用参照：18—64岁一般成年人',''];
     groups.forEach(g=>{lines.push(g.name);g.fields.forEach(f=>lines.push(f.label+'：'+display(f.id,state.values[f.id])));lines.push('')});
     lines.push('生活习惯对照（8项）',r.applicable?'达到参照'+r.met+'项；可再了解或调整'+r.review+'项；待补资料'+r.unknown+'项。':r.scopeMessage,'项数是参照完成记录，不是经验证的量表总分，不代表患病概率。');
-    r.habits.forEach(h=>lines.push(h.label+'：'+h.value+'；'+(r.applicable?({met:'达到参照',review:'可再调整',unknown:'待补资料'})[h.status]:'只作记录')+'\n参照：'+h.criterion+'\n'+sources[h.source].url));
+    lines.push('','个人危险因素评价表');evaluationRows(r.values).forEach(x=>lines.push(x.group+' / '+x.label+'：'+x.value+'；'+x.assessment+'\n参照：'+x.criterion+'\n可以怎样做：'+x.action+'\n来源：'+(x.source?sources[x.source].url:'本次自述或本人报告；不作独立量表计分')));
     lines.push('','体格与体检');r.measurements.forEach(m=>lines.push(m.title+'：'+m.value+'\n'+(m.steps?m.steps+'\n':'')+m.text));
     if(r.activity!==null)lines.push('活动量计算：'+r.values.moderate+'＋2×'+r.values.vigorous+'＝'+fmt(r.activity)+'分钟/周（中等强度等效）。');
     if(state.reference){lines.push('','前后对照',$('personal-comparison').textContent,'','保留的那次原始资料（'+state.referenceMode+'）');fields.forEach(f=>lines.push(f.label+'：'+display(f.id,state.reference[f.id])))}
@@ -214,8 +286,12 @@
       });fieldset.append(grid);$('personal-form').append(fieldset);
     });
     $('personal-form').addEventListener('submit',e=>e.preventDefault());
-    const jump=()=>{$('personal-result-title').focus();$('personal-result-title').scrollIntoView({block:'start'})};
-    $('personal-jump').onclick=jump;const review=el('button','查看本次评价','primary');review.type='button';review.onclick=jump;$('personal-form').append(review);
+    const jump=()=>{$('personal-report-title').focus();$('personal-report-title').scrollIntoView({block:'start'})};
+    $('personal-jump').onclick=jump;const review=el('button','生成 / 查看个人评价表','primary');review.type='button';review.onclick=jump;$('personal-form').append(review);
+    $('personal-edit').onclick=()=>{$('personal-form').scrollIntoView({block:'start'});$('personal-recordDate').focus({preventScroll:true})};
+    $('personal-csv').onclick=()=>{if(!state.result||!filled())return;download(tableCsv(state.values,state.mode),'个人危险因素评价表.csv','text/csv');$('personal-status').textContent='已下载本次评价表，内容与页面上的逐项结果一致。'};
+    $('personal-print').onclick=()=>{document.body.classList.add('printing-personal-report');root.print()};
+    root.addEventListener('afterprint',()=>document.body.classList.remove('printing-personal-report'));
     Object.keys(sources).forEach(k=>{const li=el('li');li.append(link(k));$('personal-sources').append(li)});
     $('hra-personal-tab').onclick=()=>setView('personal');$('hra-example-tab').onclick=()=>setView('classroom');
     $('personal-save').onclick=()=>{if(!state.result)return;download(JSON.stringify({kind:'social-medicine-personal-hra',version:1,values:state.values,reference:state.reference,mode:state.mode,referenceMode:state.referenceMode},null,2),'个人健康资料.json','application/json');$('personal-status').textContent='已保存为资料文件。下次导入可继续填写，对照记录也一并保留。'};
@@ -229,6 +305,6 @@
     $('personal-unreference').onclick=()=>{state.reference=null;state.referenceMode=null;render()};
     render();setView('personal');
   }
-  const api={sources,groups,fields,blank,validate,analyse,validateSnapshot,init,report,get view(){return state.view},get ready(){return !!state.result&&filled()}};
+  const api={sources,groups,fields,blank,validate,analyse,evaluationRows,tableCsv,validateSnapshot,init,report,get view(){return state.view},get ready(){return !!state.result&&filled()}};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.PersonalHra=api;
 })(typeof window!=='undefined'?window:globalThis);
