@@ -7,18 +7,27 @@
     tobacco:{name:'WHO：烟草与尼古丁',url:'https://www.who.int/news-room/fact-sheets/detail/tobacco'},
     alcohol:{name:'WHO：酒精',url:'https://www.who.int/news-room/fact-sheets/detail/alcohol'},
     weight:{name:'国家卫生健康委：成人体重与腰围判定说明（2025）',url:'https://www.nhc.gov.cn/xcs/c100122/202503/27b26d397f4941ff8ff3846ef40026ee.shtml'},
-    bp:{name:'国家卫生健康委：诊室、家庭血压的不同参照',url:'https://www.nhc.gov.cn/jkj/c100063/202009/b6a4c154c6574ed6814c15010c8b4b94.shtml'}
+    bp:{name:'国家卫生健康委：诊室、家庭血压的不同参照',url:'https://www.nhc.gov.cn/jkj/c100063/202009/b6a4c154c6574ed6814c15010c8b4b94.shtml'},
+    diabetes:{name:'Zhou等：中国糖尿病风险评分原研究（2013，表2）',url:'https://doi.org/10.2337/dc13-0593'},
+    diabetesTable:{name:'原研究全文及评分表（CDC文献库）',url:'https://stacks.cdc.gov/view/cdc/28193/cdc_28193_DS1.pdf'},
+    diabetesGuide:{name:'中华医学会：中国2型糖尿病防治指南（2020版，表5）',url:'https://gpedu.yiigle.com/uploads/guide_html/中国2型糖尿病防治指南（2020年版）%20-%20中华糖尿病杂志.html'}
   };
   const number=(id,label,min,max,unit='',hint='',integer=false)=>({id,label,type:'number',min,max,unit,hint,integer});
   const select=(id,label,options,hint='')=>({id,label,type:'select',options,hint});
   const groups=[
-    {name:'基本情况',hint:'请先填年龄和适用情况，其他资料知道多少填多少。',fields:[
+    {name:'基本情况',hint:'风险评分需要年龄、性别、身高体重、腰围、收缩压和糖尿病家族史。先填已有资料，不清楚的项目留空。',fields:[
       {id:'recordDate',label:'本次记录日期',type:'date',hint:'复评时记录新的日期，便于分清两次资料。'},
       number('age','年龄',0,120,'岁','本页统一的生活习惯参照用于18—64岁一般成年人。',true),
       select('scope','目前属于哪种情况？',[['general','一般成年人'],['pregnancy','孕期或产后'],['individual','医生要求限制活动或采用个别方案']]),
+      select('diabetesHistory','是否已经被医生诊断为糖尿病？',[['no','没有确诊糖尿病'],['yes','已经确诊糖尿病']],'本评分用于筛查尚未确诊的2型糖尿病；不能根据一次自测血糖自行选择“已确诊”。'),
       number('height','身高',50,250,'cm'),number('weight','体重',15,400,'kg'),
-      select('sex','体重判定所用性别',[['male','男'],['female','女']],'只用于腰围参照；可以不填。'),
-      number('waist','腰围（可选）',30,220,'cm','自然站立，肋弓下缘和髂嵴之间的中点水平测量。')
+      select('sex','评分与腰围判定所用性别',[['male','男'],['female','女']],'按原评分表的男、女两组计分。留空时不计算总分。'),
+      number('waist','腰围',30,220,'cm','自然站立，肋弓下缘和髂嵴之间的中点水平测量。风险评分需要这一项。'),
+      select('diabetesFamily','父母、兄弟姐妹或子女有糖尿病吗？',[['no','据我了解没有'],['yes','有']],'这是评分所用的一级亲属糖尿病史。不能用笼统的“心血管病或糖尿病家族史”代替。')
+    ]},
+    {name:'评分所需的血压',hint:'先安静休息，按规范测量。请填写可靠的诊室记录或连续家庭测量均值，单次家庭读数先保留作记录。',fields:[
+      select('bpContext','血压测量方式',[['clinic','诊室测量'],['home','家里偶尔测量一次'],['homeAverage','家里连续5—7天规范测量的平均值']]),
+      number('sbp','收缩压（高压）',50,300,'mmHg'),number('dbp','舒张压（低压）',20,200,'mmHg','糖尿病风险评分只用收缩压；低压用于下面的血压记录。')
     ]},
     {name:'运动与休息',hint:'填写最近一周的合计量。同一段活动只计算一次。',fields:[
       number('moderate','中等强度活动',0,10080,'分钟/周','例如快走、让呼吸加快但仍能交谈的骑车。没有就填0。'),
@@ -39,9 +48,7 @@
       select('stress','最近的压力是否影响学习、工作或休息？',[['no','没有明显影响'],['some','有一点影响'],['impact','已影响日常生活']],'用于了解生活背景，不作为心理量表计分。'),
       select('support','想改善习惯时，身边有人能提供支持吗？',[['yes','有人可以一起做或帮忙'],['some','有一些支持，但不太稳定'],['no','暂时缺少支持']])
     ]},
-    {name:'体检记录（可选）',hint:'照最近一次报告填写，不需要为完成页面专门做检查。已有诊断或正在用药时，以医生的个别目标为准。',fields:[
-      select('bpContext','血压测量方式',[['clinic','诊室测量'],['home','家里偶尔测量一次'],['homeAverage','家里连续5—7天规范测量的平均值']]),
-      number('sbp','收缩压（高压）',50,300,'mmHg'),number('dbp','舒张压（低压）',20,200,'mmHg'),
+    {name:'其他体检记录（可选）',hint:'有现成报告再填写，不需要为完成页面专门检查。这两项不参与上面的糖尿病风险评分。',fields:[
       number('glucose','空腹血糖',1,40,'mmol/L','记录报告值；本页不根据一次检测诊断糖尿病。'),
       number('cholesterol','总胆固醇',1,30,'mmol/L','核对单位。血脂应结合LDL-C、其他危险因素及报告解释，不据总胆固醇一项判定健康。')
     ]},
@@ -122,6 +129,47 @@
     if(has(values.cholesterol))measurements.push({title:'总胆固醇记录',value:values.cholesterol+' mmol/L',text:'还需结合LDL-C、其他危险因素及医生设定的目标；这里不使用课堂中年男性的mg/dl危险系数。'});
     return {values,applicable,scopeMessage,habits,met,review,unknown:8-met-review,activity,bmi,measurements};
   }
+  // Zhou et al., Diabetes Care 2013;36:3944–3952, Table 2. Points screen for undiagnosed diabetes, not a probability.
+  const diabetesRules={
+    age:[[25,0],[35,4],[40,8],[45,11],[50,12],[55,13],[60,15],[65,16],[75,18]],
+    bmi:[[22,0],[24,1],[30,3],[Infinity,5]],
+    waist:[[75,0],[80,3],[85,5],[90,7],[95,8],[Infinity,10]],
+    sbp:[[110,0],[120,1],[130,3],[140,6],[150,7],[160,8],[Infinity,10]]
+  };
+  function diabetesRisk(input){
+    const v=validate(input),age=has(v.age)?Number(v.age):null;
+    const missing=[],need=(id,label)=>{if(!has(v[id]))missing.push({id,label})};
+    for(const [id,label] of [['age','年龄'],['scope','适用情况'],['diabetesHistory','是否已确诊糖尿病'],['sex','性别'],['height','身高'],['weight','体重'],['waist','腰围'],['sbp','收缩压'],['bpContext','血压测量方式'],['diabetesFamily','一级亲属糖尿病史']])need(id,label);
+    let reason='';
+    if(age!==null&&(age<20||age>74))reason='这份评分的适用年龄为20—74岁。当前年龄不在范围内，不外推分数。';
+    else if(v.diabetesHistory==='yes')reason='已经确诊糖尿病时，不用这份筛查评分判断是否患病。请按医生的方案管理和复查。';
+    else if(v.scope&&v.scope!=='general')reason='孕产期或需要个别方案的情况，不在本页统一评分的应用范围内。';
+    if(v.bpContext==='home')missing.push({id:'bpContext',label:'规范测量的血压记录（目前为单次家庭读数）'});
+    const bmi=has(v.height)&&has(v.weight)?Number(v.weight)/(Number(v.height)/100)**2:null;
+    const points=(name,value)=>diabetesRules[name].find(([upper])=>value<upper)[1];
+    const waistBase=v.sex==='female'?70:75,w=Number(v.waist);
+    const waistBand=!has(v.waist)||!v.sex?'需同时填写腰围和性别':(v.sex==='male'?'男':'女')+'：'+(w<waistBase?'<'+waistBase:w<waistBase+5?waistBase+'—<'+(waistBase+5):w<waistBase+10?(waistBase+5)+'—<'+(waistBase+10):w<waistBase+15?(waistBase+10)+'—<'+(waistBase+15):w<waistBase+20?(waistBase+15)+'—<'+(waistBase+20):'≥'+(waistBase+20))+' cm';
+    const items=[
+      {id:'age',label:'年龄',value:age===null?'未填':v.age+' 岁',band:age===null||age<20||age>74?'—':age<25?'20—24岁':age<35?'25—34岁':age<40?'35—39岁':age<45?'40—44岁':age<50?'45—49岁':age<55?'50—54岁':age<60?'55—59岁':age<65?'60—64岁':'65—74岁',points:age!==null&&age>=20&&age<=74?points('age',age):null,max:18},
+      {id:'sex',label:'性别',value:display('sex',v.sex),band:v.sex?display('sex',v.sex):'—',points:v.sex?v.sex==='male'?2:0:null,max:2},
+      {id:'bmi',label:'BMI',value:bmi===null?'需填身高、体重':fmt(bmi,4)+' kg/m²',band:bmi===null?'—':bmi<22?'<22':bmi<24?'22—<24':bmi<30?'24—<30':'≥30',points:bmi===null?null:points('bmi',bmi),max:5},
+      {id:'waist',label:'腰围',value:display('waist',v.waist),band:waistBand,points:has(v.waist)&&v.sex?points('waist',Number(v.waist)+(v.sex==='female'?5:0)):null,max:10},
+      {id:'sbp',label:'收缩压',value:display('sbp',v.sbp),band:!has(v.sbp)?'—':Number(v.sbp)<110?'<110 mmHg':Number(v.sbp)<120?'110—<120 mmHg':Number(v.sbp)<130?'120—<130 mmHg':Number(v.sbp)<140?'130—<140 mmHg':Number(v.sbp)<150?'140—<150 mmHg':Number(v.sbp)<160?'150—<160 mmHg':'≥160 mmHg',points:has(v.sbp)&&v.bpContext&&v.bpContext!=='home'?points('sbp',Number(v.sbp)):null,max:10},
+      {id:'diabetesFamily',label:'一级亲属糖尿病史',value:display('diabetesFamily',v.diabetesFamily),band:'父母、兄弟姐妹或子女',points:v.diabetesFamily?v.diabetesFamily==='yes'?6:0:null,max:6}
+    ];
+    if(reason)items.forEach(item=>item.points=null);
+    const status=reason?'outside':missing.length?'incomplete':'complete',score=status==='complete'?items.reduce((sum,item)=>sum+item.points,0):null;
+    const interpretation=status!=='complete'?reason||'必要资料尚未完整，暂不计算总分。':score>=25?'达到25分筛查切点。可带上记录到校医院或其他医疗机构咨询，由专业人员安排血糖等进一步检查。':'未达到25分筛查切点，不能据此排除糖尿病。若已有血糖异常或不适，仍需进一步评估。';
+    return {status,reason,missing,items,score,cutoff:25,max:51,high:score===null?null:score>=25,interpretation,bmi};
+  }
+  function diabetesCsv(input,mode='自行填写'){
+    const v=validate(input),r=diabetesRisk(v);if(r.status!=='complete')throw Error('风险评分资料尚未完整或不适用，暂不导出总分');
+    const cell=value=>{let s=String(value??'');if(/^[=+\-@\t\r]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"'};
+    const rows=[['记录日期','资料标记','模型','项目','本次资料','对应分组','分数','解释','来源']];
+    r.items.forEach(item=>rows.push([v.recordDate,mode,'中国糖尿病风险评分（NCDRS）',item.label,item.value,item.band,item.points,'分值，不是百分比',sources.diabetes.url]));
+    rows.push([v.recordDate,mode,'中国糖尿病风险评分（NCDRS）','合计',r.score+' / 51','筛查切点≥25分',r.score,r.interpretation,sources.diabetes.url]);
+    return rows.map(row=>row.map(cell).join(',')).join('\r\n');
+  }
   function display(id,value){const f=byId[id];return !has(value)?'未填':f.type==='select'?f.options.find(o=>o[0]===value)[1]:value+(f.unit?' '+f.unit:'')}
   const statusLabels={met:'达到参照',review:'需要留意',unknown:'待补资料',record:'仅作记录',outside:'需个别评价'};
   function evaluationRows(input){
@@ -176,14 +224,47 @@
   function read(){return Object.fromEntries(fields.map(f=>[f.id,$('personal-'+f.id).value]))}
   function apply(values){fields.forEach(f=>{$('personal-'+f.id).value=values[f.id]||''});state.values={...values};render()}
   function confirmReplace(){return !(filled()||state.reference)||root.confirm('当前资料和对照会被替换。需要保留的话，请先保存。继续吗？')}
+  function renderDiabetes(){
+    const r=diabetesRisk(state.values),preview=$('personal-score-preview'),out=$('personal-diabetes-result');
+    preview.replaceChildren();out.replaceChildren();$('personal-diabetes-rows').replaceChildren();
+    $('personal-diabetes-csv').disabled=r.status!=='complete';
+    preview.append(el('h4','糖尿病风险评分'));
+    if(r.status==='complete'){
+      const score=el('div','','diabetes-total');score.append(el('strong',r.score),el('span','分 / 51'));
+      preview.append(score,el('p',r.high?'达到25分筛查切点':'未达到25分筛查切点','diabetes-verdict '+(r.high?'screen':'below')));
+      const result=el('div','','diabetes-result-heading'),value=el('div','','diabetes-total');value.append(el('strong',r.score),el('span','分 / 51'));
+      const text=el('div');text.append(el('h4',r.high?'达到筛查切点':'未达到筛查切点'),el('p',r.interpretation));result.append(value,text);out.append(result);
+      const chart=el('div','','diabetes-scale'),track=el('div','','diabetes-score-track');
+      r.items.forEach(item=>{const part=el('span','','diabetes-part '+item.id);part.style.width=item.points/51*100+'%';part.title=item.label+'：'+item.points+'分';track.append(part)});
+      const marker=el('span','','diabetes-cutoff');marker.style.left=25/51*100+'%';marker.setAttribute('aria-hidden','true');track.append(marker);
+      chart.append(track);const axis=el('div','','diabetes-score-axis');axis.append(el('span','0'),el('span','25分 · 筛查切点','cutoff-label'),el('span','51'));chart.append(axis);chart.setAttribute('role','img');chart.setAttribute('aria-label','糖尿病风险评分'+r.score+'分，范围0至51分，筛查切点25分');out.append(chart);
+      out.append(el('p',r.items.map(item=>item.label+' '+item.points).join(' ＋ ')+' ＝ '+r.score+' 分','diabetes-sum'));
+      if(state.reference&&state.mode.includes('模拟')===state.referenceMode.includes('模拟')){
+        const previous=diabetesRisk(state.reference);
+        if(previous.status==='complete')out.append(el('p','保留的那次评分：'+previous.score+'分；本次：'+r.score+'分；变化：'+(r.score-previous.score>0?'+':'')+(r.score-previous.score)+'分。分数差不等于患病概率变化。','help'));
+      }
+    }else{
+      preview.append(el('p',r.status==='outside'?'本次不适用这份筛查评分':'还需补齐评分资料','diabetes-verdict'),el('p',r.interpretation,'help'));
+      out.append(el('p',r.interpretation,'diabetes-pending'));
+      if(r.status==='incomplete'){
+        out.append(el('p','还需要：'+r.missing.map(item=>item.label).join('、')+'。点击下面的项目可回到填写处。','help'));
+        const missing=el('div','','diabetes-missing');r.missing.forEach(item=>{const button=el('button','填写'+item.label);button.type='button';button.onclick=()=>{$('personal-'+item.id).focus();$('personal-'+item.id).scrollIntoView({block:'center'})};missing.append(button)});out.append(missing);
+      }
+    }
+    preview.append(el('p','这是糖尿病筛查分值，不是全病种风险或患病百分比。','help'));
+    const jump=el('button','查看分项与计分依据');jump.type='button';jump.onclick=()=>{$('personal-diabetes-title').focus();$('personal-diabetes-title').scrollIntoView({block:'start'})};preview.append(jump);
+    r.items.forEach(item=>{const row=el('tr');row.dataset.factor=item.id;for(const value of [item.label,item.value,item.band,item.points===null?'—':item.points+' 分'])row.append(el('td',String(value)));$('personal-diabetes-rows').append(row)});
+    out.append(el('p','0—51是风险得分范围，51不是“健康满分”。本页不把分值换算成患病概率。','help'));
+  }
   function renderReport(){
-    for(const id of ['personal-risk-rows','personal-habit-chart','personal-activity-chart','personal-report-plan'])$(id).replaceChildren();
+    for(const id of ['personal-risk-rows','personal-habit-chart','personal-activity-chart','personal-report-plan','personal-diabetes-result','personal-diabetes-rows'])$(id).replaceChildren();
     const ready=!!state.result&&filled(),r=state.result;
     $('personal-report-content').hidden=!ready;$('personal-report-empty').hidden=ready;
     $('personal-csv').disabled=!ready;$('personal-print').disabled=!ready;
     $('personal-report-meta').textContent=ready?[r.values.recordDate?'记录日期：'+r.values.recordDate:'记录日期未填',has(r.values.age)?r.values.age+'岁':'年龄未填',r.values.sex?display('sex',r.values.sex):'判定所用性别未填',display('scope',r.values.scope),'资料来源：'+state.mode].join(' · '):'';
     $('personal-report-empty').textContent=state.result?'填写资料或导入保存的文件后，这里会生成你的评价表。不清楚的项目可以留空，表中会保留“待补资料”。':'请先核对上方输入，评价表暂不显示，以免沿用旧结果。';
-    if(!ready)return;
+    if(!ready){$('personal-diabetes-csv').disabled=true;return}
+    renderDiabetes();
     if(!r.applicable)$('personal-habit-chart').append(el('p',r.scopeMessage,'help'));
     else{
       const chart=el('div','','habit-composition'),ring=el('div','','habit-donut');
@@ -217,11 +298,12 @@
     if(r.values.plan||r.values.reviewDate){$('personal-report-plan').append(el('h4','我的下一步'));if(r.values.plan)$('personal-report-plan').append(el('p',r.values.plan));if(r.values.reviewDate)$('personal-report-plan').append(el('p','计划复评：'+r.values.reviewDate,'help'))}
   }
   function render(){
-    const out=$('personal-summary');out.replaceChildren();$('personal-measures').replaceChildren();$('personal-next').replaceChildren();$('personal-comparison').replaceChildren();$('personal-print-data').replaceChildren();$('personal-error').textContent='';state.result=null;
+    const out=$('personal-summary');out.replaceChildren();$('personal-score-preview').replaceChildren();$('personal-measures').replaceChildren();$('personal-next').replaceChildren();$('personal-comparison').replaceChildren();$('personal-print-data').replaceChildren();$('personal-error').textContent='';state.result=null;
     try{
       state.result=analyse(state.values);const r=state.result;
       $('personal-result-title').textContent=filled()?'这次记录的情况':'填写后在这里看结果';
       if(r.applicable){
+        out.append(el('h4','生活习惯参照'));
         const band=el('div','','personal-count');band.append(el('strong',r.met+' / 8'),el('span','项习惯达到所列参照'));out.append(band);
         out.append(el('p','已评价'+(8-r.unknown)+'项 · 可再了解或调整'+r.review+'项 · 待补资料'+r.unknown+'项','help'));
         const track=el('div','','habit-track');r.habits.forEach(h=>{const part=el('span','','habit-segment '+h.status);part.title=h.label+'：'+({met:'达到参照',review:'可再调整',unknown:'待补资料'})[h.status];track.append(part)});track.setAttribute('aria-label',r.met+'项达到参照，'+r.review+'项可再调整，'+r.unknown+'项待补资料');out.append(track);
@@ -264,6 +346,9 @@
     if(!state.result||!filled())throw Error('先填写有效的个人资料');
     const r=state.result,lines=['个人健康危险因素记录','资料来源：'+state.mode,'适用参照：18—64岁一般成年人',''];
     groups.forEach(g=>{lines.push(g.name);g.fields.forEach(f=>lines.push(f.label+'：'+display(f.id,state.values[f.id])));lines.push('')});
+    const diabetes=diabetesRisk(state.values);lines.push('中国糖尿病风险评分（NCDRS）','适用：中国20—74岁、尚未确诊糖尿病的一般成年人。');
+    diabetes.items.forEach(item=>lines.push(item.label+'：'+item.value+'；'+item.band+'；'+(item.points===null?'暂不计分':item.points+'分')));
+    lines.push(diabetes.score===null?'总分：暂未计算':'总分：'+diabetes.score+'/51分；筛查切点≥25分',diabetes.interpretation,'分值不是患病概率，不与生活习惯项数合并。','计分依据：'+sources.diabetes.url,'');
     lines.push('生活习惯对照（8项）',r.applicable?'达到参照'+r.met+'项；可再了解或调整'+r.review+'项；待补资料'+r.unknown+'项。':r.scopeMessage,'项数是参照完成记录，不是经验证的量表总分，不代表患病概率。');
     lines.push('','个人危险因素评价表');evaluationRows(r.values).forEach(x=>lines.push(x.group+' / '+x.label+'：'+x.value+'；'+x.assessment+'\n参照：'+x.criterion+'\n可以怎样做：'+x.action+'\n来源：'+(x.source?sources[x.source].url:'本次自述或本人报告；不作独立量表计分')));
     lines.push('','体格与体检');r.measurements.forEach(m=>lines.push(m.title+'：'+m.value+'\n'+(m.steps?m.steps+'\n':'')+m.text));
@@ -290,9 +375,11 @@
     $('personal-jump').onclick=jump;const review=el('button','生成 / 查看个人评价表','primary');review.type='button';review.onclick=jump;$('personal-form').append(review);
     $('personal-edit').onclick=()=>{$('personal-form').scrollIntoView({block:'start'});$('personal-recordDate').focus({preventScroll:true})};
     $('personal-csv').onclick=()=>{if(!state.result||!filled())return;download(tableCsv(state.values,state.mode),'个人危险因素评价表.csv','text/csv');$('personal-status').textContent='已下载本次评价表，内容与页面上的逐项结果一致。'};
+    $('personal-diabetes-csv').onclick=()=>{if(!state.result)return;download(diabetesCsv(state.values,state.mode),'中国糖尿病风险评分表.csv','text/csv');$('personal-status').textContent='已下载6项指标、分值、总分及解释，附有原研究网址。'};
     $('personal-print').onclick=()=>{document.body.classList.add('printing-personal-report');root.print()};
     root.addEventListener('afterprint',()=>document.body.classList.remove('printing-personal-report'));
     Object.keys(sources).forEach(k=>{const li=el('li');li.append(link(k));$('personal-sources').append(li)});
+    for(const text of ['年龄（岁）：20—24＝0；25—34＝4；35—39＝8；40—44＝11；45—49＝12；50—54＝13；55—59＝15；60—64＝16；65—74＝18。','性别：女＝0；男＝2。','BMI（kg/m²）：<22＝0；22—<24＝1；24—<30＝3；≥30＝5。','腰围（cm），男/女：<75/<70＝0；75—<80/70—<75＝3；80—<85/75—<80＝5；85—<90/80—<85＝7；90—<95/85—<90＝8；≥95/≥90＝10。','收缩压（mmHg）：<110＝0；110—<120＝1；120—<130＝3；130—<140＝6；140—<150＝7；150—<160＝8；≥160＝10。','一级亲属糖尿病史：无＝0；有＝6。6项分值相加，总分0—51，筛查切点≥25分。'])$('personal-diabetes-rules').append(el('p',text,'help'));
     $('hra-personal-tab').onclick=()=>setView('personal');$('hra-example-tab').onclick=()=>setView('classroom');
     $('personal-save').onclick=()=>{if(!state.result)return;download(JSON.stringify({kind:'social-medicine-personal-hra',version:1,values:state.values,reference:state.reference,mode:state.mode,referenceMode:state.referenceMode},null,2),'个人健康资料.json','application/json');$('personal-status').textContent='已保存为资料文件。下次导入可继续填写，对照记录也一并保留。'};
     $('personal-import').onchange=async()=>{
@@ -300,11 +387,11 @@
       try{if(file.size>100000)throw Error('文件过大，请选择从本页保存的个人资料文件');const data=validateSnapshot(JSON.parse((await file.text()).replace(/^\uFEFF/,'')));if(!confirmReplace())return;state.mode=data.mode;state.reference=data.reference;state.referenceMode=data.referenceMode;apply(data.values);$('personal-status').textContent='已恢复保存的资料，可接着填写。'}catch(e){$('personal-status').textContent='没有导入，当前资料保留。'+(e instanceof SyntaxError?'文件不是有效的JSON。':e.message)}finally{input.value=''}
     };
     $('personal-clear').onclick=()=>{if((filled()||state.reference)&&!root.confirm('清空当前资料和临时对照？需要保留的话，请先保存。'))return;state.reference=null;state.referenceMode=null;state.mode='自行填写';apply(blank());$('personal-status').textContent='已清空，可以重新填写。'};
-    $('personal-demo').onclick=()=>{if(!confirmReplace())return;state.mode='模拟资料';state.reference=null;state.referenceMode=null;apply({...blank(),age:'21',scope:'general',sex:'male',height:'172',weight:'68',moderate:'60',vigorous:'0',strength:'1',sleep:'6',sitting:'9',fruitveg:'250',alcohol:'0',smoke:'never',secondhand:'2',family:'no',stress:'some',support:'yes'});$('personal-status').textContent='已载入虚构的模拟资料，食盐和体检值仍留空；请不要当作本人的结果。'};
+    $('personal-demo').onclick=()=>{if(!confirmReplace())return;state.mode='模拟资料';state.reference=null;state.referenceMode=null;apply({...blank(),age:'21',scope:'general',sex:'male',height:'172',weight:'68',waist:'82',diabetesHistory:'no',diabetesFamily:'no',bpContext:'clinic',sbp:'120',dbp:'78',moderate:'60',vigorous:'0',strength:'1',sleep:'6',sitting:'9',fruitveg:'250',alcohol:'0',smoke:'never',secondhand:'2',family:'no',stress:'some',support:'yes'});$('personal-status').textContent='已载入虚构的模拟资料，糖尿病风险评分为11分；食盐和血糖、血脂仍留空。请不要当作本人的结果。'};
     $('personal-reference').onclick=()=>{if(!state.result)return;if(state.reference&&!root.confirm('替换之前保留的对照记录吗？'))return;state.reference={...state.values};state.referenceMode=state.mode;render();$('personal-status').textContent='已保留本次资料。修改当前填写后，可以比较两次都有资料的项目；保存文件会同时保存这次对照。'};
     $('personal-unreference').onclick=()=>{state.reference=null;state.referenceMode=null;render()};
     render();setView('personal');
   }
-  const api={sources,groups,fields,blank,validate,analyse,evaluationRows,tableCsv,validateSnapshot,init,report,get view(){return state.view},get ready(){return !!state.result&&filled()}};
+  const api={sources,groups,fields,blank,validate,analyse,evaluationRows,tableCsv,diabetesRisk,diabetesCsv,validateSnapshot,init,report,get view(){return state.view},get ready(){return !!state.result&&filled()}};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.PersonalHra=api;
 })(typeof window!=='undefined'?window:globalThis);

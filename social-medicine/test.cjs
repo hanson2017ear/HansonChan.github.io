@@ -54,6 +54,30 @@ assert.equal(personal.evaluationRows(profileB).find(r=>r.id==='smoke').status,'r
 const riskCsv=personal.tableCsv({...healthy,recordDate:'2026-10-24'},'模拟资料');
 assert.equal(riskCsv.split('\r\n').length,18);assert.match(riskCsv,/'?"记录日期","年龄","资料标记"/);assert.match(riskCsv,/"2026-10-24","21","模拟资料"/);assert.match(riskCsv,/www.who.int/);assert.match(riskCsv,/"总胆固醇","未填"/);
 assert.match(personal.tableCsv(healthy,'=2+3'),/"'=2\+3"/);
+// Independent fixtures from Zhou et al. 2013 Table 2; all bin boundaries, zero, cutoff and maximum.
+const screen={...personal.blank(),age:'21',scope:'general',diabetesHistory:'no',sex:'male',height:'172',weight:'68',waist:'82',sbp:'120',bpContext:'clinic',diabetesFamily:'no'};
+assert.equal(personal.diabetesRisk(screen).score,11);
+assert.deepEqual(personal.diabetesRisk(screen).items.map(i=>i.points),[0,2,1,5,3,0]);
+const score25={...screen,age:'41',sbp:'130'};assert.equal(personal.diabetesRisk(score25).score,25);assert.equal(personal.diabetesRisk(score25).high,true);
+const score24={...screen,age:'35',height:'200',weight:'104',waist:'90'};assert.equal(personal.diabetesRisk(score24).score,24);assert.equal(personal.diabetesRisk(score24).high,false);
+const score0={...screen,age:'20',sex:'female',height:'170',weight:'55',waist:'69',sbp:'100'};assert.equal(personal.diabetesRisk(score0).score,0);assert.equal(personal.diabetesRisk(score0).status,'complete');
+assert.equal(personal.diabetesRisk({...screen,age:'74',height:'200',weight:'120',waist:'95',sbp:'160',diabetesFamily:'yes'}).score,51);
+const factorScore=(input,id)=>personal.diabetesRisk(input).items.find(i=>i.id===id).points;
+for(const [age,points] of [[20,0],[24,0],[25,4],[34,4],[35,8],[39,8],[40,11],[44,11],[45,12],[49,12],[50,13],[54,13],[55,15],[59,15],[60,16],[64,16],[65,18],[74,18]])assert.equal(factorScore({...screen,age:String(age)},'age'),points);
+for(const [bmi,points] of [[21.9999,0],[22,1],[23.9999,1],[24,3],[29.9999,3],[30,5]])assert.equal(factorScore({...screen,height:'200',weight:String(bmi*4)},'bmi'),points);
+for(const sex of ['male','female'])for(const [waist,points] of [[74.99,0],[75,3],[79.99,3],[80,5],[84.99,5],[85,7],[89.99,7],[90,8],[94.99,8],[95,10]])assert.equal(factorScore({...screen,sex,waist:String(waist-(sex==='female'?5:0))},'waist'),points);
+for(const [sbp,points] of [[109.99,0],[110,1],[119.99,1],[120,3],[129.99,3],[130,6],[139.99,6],[140,7],[149.99,7],[150,8],[159.99,8],[160,10]])assert.equal(factorScore({...screen,sbp:String(sbp)},'sbp'),points);
+for(const id of ['age','scope','diabetesHistory','sex','height','weight','waist','sbp','bpContext','diabetesFamily']){const r=personal.diabetesRisk({...screen,[id]:''});assert.equal(r.status,'incomplete');assert.equal(r.score,null);assert.ok(r.missing.some(x=>x.id===id))}
+for(const age of ['19','75'])assert.equal(personal.diabetesRisk({...screen,age}).status,'outside');
+for(const patch of [{diabetesHistory:'yes'},{scope:'pregnancy'},{scope:'individual'}]){const r=personal.diabetesRisk({...screen,...patch});assert.equal(r.status,'outside');assert.equal(r.score,null);assert.ok(r.items.every(i=>i.points===null))}
+assert.equal(personal.diabetesRisk({...screen,age:'65'}).status,'complete');assert.equal(personal.analyse({...screen,age:'65'}).applicable,false);
+assert.equal(personal.diabetesRisk({...screen,bpContext:'home'}).score,null);assert.equal(personal.diabetesRisk({...screen,bpContext:'homeAverage'}).score,11);
+assert.equal(personal.diabetesRisk({...screen,diabetesFamily:'',family:'yes'}).score,null);
+assert.equal(personal.diabetesRisk({...screen,diabetesFamily:'yes'}).score,17);
+assert.throws(()=>personal.diabetesRisk({...screen,diabetesHistory:'guess'}));
+assert.equal(personal.validateSnapshot(partialSnapshot).values.diabetesHistory,'');assert.equal(personal.validateSnapshot(partialSnapshot).values.diabetesFamily,'');
+const scoredCsv=personal.diabetesCsv({...score25,recordDate:'2026-10-24'},'模拟资料');assert.equal(scoredCsv.split('\r\n').length,8);assert.match(scoredCsv,/"合计","25 \/ 51","筛查切点≥25分","25"/);assert.match(scoredCsv,/10\.2337\/dc13-0593/);assert.match(scoredCsv,/"2026-10-24","模拟资料"/);
+assert.throws(()=>personal.diabetesCsv({...screen,waist:''}));assert.throws(()=>personal.diabetesCsv({...screen,diabetesHistory:'yes'}));assert.match(personal.diabetesCsv(screen,'=1+2'),/"'=1\+2"/);
 assert.equal(meta.itemIds.length,100);assert.equal(new Set(meta.itemIds).size,100);
 const classReverse=['F1.1','F1.2','F1.3','F1.4','F2.2','F2.4','F3.2','F3.4','F7.2','F7.3','F8.1','F8.2','F8.3','F8.4','F9.3','F9.4','F10.2','F10.4','F11.1','F11.2','F11.3','F11.4','F13.1','F15.4','F16.3','F18.2','F18.4','F22.2','F23.2','F23.4'];
 const neutral=Object.fromEntries(meta.itemIds.map(id=>[id,'C']));
@@ -98,4 +122,4 @@ const partial=Object.fromEntries(meta.itemIds.map(id=>[id,id==='F1.1'?'B':'']));
 const partialCsv='item,score\n'+meta.itemIds.map(id=>id+','+partial[id]).join('\n');
 assert.deepEqual(Object.entries(c.parseWhoCsv(partialCsv,meta)).filter(([,v])=>v!==''),[['F1.1',2]]);
 assert.throws(()=>c.whoqol100(c.parseWhoCsv(partialCsv,meta),meta),/尚缺99题/);
-console.log('Passed: personal HRA references, missing data, BMI/activity, scope, blood-pressure context and JSON validation; WHOQOL-100, classroom HRA and QALY regression.');
+console.log('Passed: NCDRS published weights, every bin boundary, zero/24/25/51, exclusions, missing data, family-history separation and CSV; personal HRA, WHOQOL-100, classroom HRA and QALY regression.');
