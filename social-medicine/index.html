@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="填写WHOQOL-100问卷，按课堂表12-1、12-2、12-3计算健康危险因素评价，并复习QALY计算。">
   <title>社会医学课程练习</title>
-  <link rel="stylesheet" href="style.css?v=20261025audit1">
+  <link rel="stylesheet" href="style.css?v=20261025print2">
 </head>
 <body>
 <a class="skip" href="#workspace">跳到计算区</a>
@@ -72,14 +72,14 @@
       <div class="toolbar"><button id="lesson-four" type="button">填入例题的4项改善</button><button id="lesson-unchanged" type="button">全部按当前情况计算</button></div><p class="help">例题设定：定期锻炼、恢复平均体重、治疗抑郁、每年直肠镜检查。其中的检查安排是原题条件，不是现实筛查建议。</p>
     </form>
     <details id="lesson-conversion" class="process lesson-conversion"><summary>查看分数和取值依据</summary><p class="help">这里列出每项变量对应的r值、内插过程和出处。缺少系数时，可填写r值并附上表号、页码或原网址。未应用的草稿也会随资料保存。修改变量时，只重新检查受影响的系数；另一边独立填写的数值会保留。</p><div id="lesson-factor-details"></div></details>
-    <section class="lesson-results" aria-labelledby="lesson-results-title"><div class="report-heading"><div><p class="kicker">表12-1 · 第6—13列</p><h3 id="lesson-results-title" tabindex="-1">各死因的计算结果</h3><p id="lesson-mode" class="help"></p></div><div class="toolbar"><button id="lesson-csv" class="primary" disabled>导出表12-1（CSV）</button><button id="lesson-print" disabled>打印 / 保存为PDF</button></div></div>
+    <section class="lesson-results" aria-labelledby="lesson-results-title"><div class="report-heading"><div><p class="kicker">表12-1 · 第6—13列</p><h3 id="lesson-results-title" tabindex="-1">各死因的计算结果</h3><p id="lesson-mode" class="help"></p></div><div class="toolbar"><button id="lesson-csv" class="primary" disabled>导出表12-1（CSV）</button><button id="lesson-print" disabled>打印预览 / 保存PDF</button></div></div>
       <p id="lesson-progress" class="help" role="status"></p><p id="lesson-error" class="error" role="status"></p><div id="lesson-pending"></div>
       <div id="lesson-metrics" class="metric-band" aria-live="polite"></div>
       <div class="lesson-results-grid"><div class="table-scroll"><table class="lesson-summary-table"><caption>各死因汇总（M、D单位：/10万）</caption><thead><tr><th scope="col">死因</th><th scope="col">基准率M</th><th scope="col">当前R</th><th scope="col">改善后R</th><th scope="col">当前D</th><th scope="col">改善后D</th><th scope="col">降低量</th><th scope="col">占原总危险%</th></tr></thead><tbody id="lesson-summary-rows"></tbody></table></div><figure class="lesson-risk-figure"><figcaption>改善前后对照（D，/10万）</figcaption><div class="lesson-legend"><span>当前</span><span>改善后</span></div><div id="lesson-risk-chart"></div><p class="help">箭头旁为该项相对变化；表格末列为占原总危险的比例。</p></figure></div>
       <details class="process"><summary>查看完整表12-1（共13列）</summary><div class="table-scroll"><table class="lesson-full-table"><caption>表12-1：变量、分数与计算结果</caption><thead><tr><th>(1)死亡原因</th><th>(2)死亡概率<br>/10万</th><th>(3)疾病诱发因素</th><th>(4)指标值</th><th>(5)危险分数</th><th>(6)组合危险分数</th><th>(7)存在死亡危险<br>/10万</th><th>(8)改变危险因素</th><th>(9)新危险分数</th><th>(10)新组合危险分数</th><th>(11)新存在死亡危险<br>/10万</th><th>(12)降低量<br>/10万</th><th>(13)占原总危险%</th></tr></thead><tbody id="lesson-full-rows"></tbody></table></div></details>
     </section>
     <section class="lesson-age-section" aria-labelledby="lesson-age-title"><div><p class="kicker">表12-3</p><h3 id="lesson-age-title">实际年龄、评价年龄与增长年龄</h3><div id="lesson-ages" class="age-chart"></div><p id="lesson-age-note" class="steps"></p><p class="help">按实际年龄末位选列，用合计危险在相邻两行间内插。增长年龄指改善后危险对应的年龄，两者差值不代表寿命能延长多少。</p></div><details class="process"><summary>查看查表过程</summary><p class="help">采用表12-3男性列中1600—61640的区段（基础年龄24—70岁）。低龄区部分率值重复或不随年龄递增，无法唯一反求年龄；超出本页范围时不计算。</p><div class="lesson-age-legend"><span>当前风险的相邻行</span><span>改善后风险的相邻行</span></div><div class="table-scroll lesson-age-table-wrap"><table class="lesson-age-table"><thead><tr><th>男性合计危险/10万</th><th>所选列的评价年龄</th></tr></thead><tbody id="lesson-age-rows"></tbody></table></div></details></section>
-    <details class="process"><summary>公式与资料来源</summary><div class="formula">X＝Σ<sub>rᵢ&gt;1</sub>(rᵢ−1)，Y＝Π<sub>rᵢ≤1</sub>rᵢ，R＝X＋Y<br>D＝M×R；总危险＝ΣD<br>每项降低量＝当前D−改善后D<br>第13列＝该死因降低量÷原总危险×100%</div><p>先用表12-2查冠心病的单项分数，再在表12-1中计算组合分数和各项危险，最后用合计危险查表12-3，得到评价年龄与增长年龄。</p><ul><li>两张表的例题取值有差别：胆固醇192 mg/dl，表12-1给定0.6，按表12-2内插为0.65；超重30%，表12-1给定1.3，按表12-2的15%与50%两点内插为1.214286。可在页面上方选择取值方式。</li><li>表12-2只列有冠心病的转换参数，其他死因仍需使用各自的系数。</li><li>沿用表12-1给定值时，例题总危险为7167.45 → 3430.35 /10万，降低3737.10 /10万；下降52.1399%，保留一位小数为52.1%。</li><li>核对结果：自杀改善后D＝264×1.5＝396；肺炎改善后R＝1、D＝111。课件照片与第5版部分数值有印刷差异，此处按补充表和算式计算。</li><li>来源：健康风险资料夹中的课堂补充表12-1（第150—151页）、12-2（第153页）、12-3（第154页）；《社会医学》课程课件第163—174页。李鲁《社会医学》第5版对应第11章，表号与补充表不同。</li></ul><p class="help">本页用于课堂练习，所用参数来自教材例题，结果不用于个人诊疗或筛查安排。</p></details>
+    <details class="process"><summary>公式与资料来源</summary><div class="formula">X＝Σ<sub>rᵢ&gt;1</sub>(rᵢ−1)，Y＝Π<sub>rᵢ≤1</sub>rᵢ，R＝X＋Y<br>D＝M×R；总危险＝ΣD<br>每项降低量＝当前D−改善后D<br>第13列＝该死因降低量÷原总危险×100%</div><p>先用表12-2查冠心病的单项分数，再在表12-1中计算组合分数和各项危险，最后用合计危险查表12-3，得到评价年龄与增长年龄。</p><ul><li>两张表的例题取值有差别：胆固醇192 mg/dl，表12-1给定0.6，按表12-2内插为0.65；超重30%，表12-1给定1.3，按表12-2的15%与50%两点内插为1.214286。可在页面上方选择取值方式。</li><li>表12-2只列有冠心病的转换参数，其他死因仍需使用各自的系数。</li><li>补充了第5版第137页（PDF第161页）的正文示例：男性40—44岁、每天吸烟20支时，肺癌r＝R＝1.9，D＝202×1.9＝383.8 /10万。该数值不用于其他吸烟量或其他死因。</li><li>第5版第136页将完整统计模型指向配套融合教材。现有纸本、课件和四张补充表未列出心脏杂音“有”、X线“阳性”等情况的转换分数，这些项目仍需对应原表，不能用其他模型的系数代填。</li><li>沿用表12-1给定值时，例题总危险为7167.45 → 3430.35 /10万，降低3737.10 /10万；下降52.1399%，保留一位小数为52.1%。</li><li>核对结果：自杀改善后D＝264×1.5＝396；肺炎改善后R＝1、D＝111。课件照片与第5版部分数值有印刷差异，此处按补充表和算式计算。</li><li>来源：健康风险资料夹中的课堂补充表12-1（第150—151页）、12-2（第153页）、12-3（第154页）；《社会医学》课程课件第163—174页。李鲁《社会医学》第5版对应第11章，表号与补充表不同。</li></ul><p class="help">本页用于课堂练习，所用参数来自教材例题，结果不用于个人诊疗或筛查安排。</p></details>
     <p class="help lesson-legacy-link">以前保存的生活方式记录，可在<a href="legacy.html#hra" target="_blank" rel="noopener">旧版记录页</a>中打开；本页需重新填写表12-1的变量。</p>
   </section>
   <section id="qaly" class="panel" role="tabpanel" aria-labelledby="tab-qaly" hidden>
@@ -104,5 +104,5 @@
   </section>
   <footer><span>社会医学课程练习 · 2026.10</span><span>答案不上传，离开前请保存。</span></footer>
 </main>
-<script src="course-data.js?v=20261024"></script><script src="whoqol-questions.js?v=20261024"></script><script src="calc.js?v=20261024"></script><script src="hra-lesson.js?v=20261025audit1"></script><script src="app.js?v=20261025audit1"></script>
+<script src="course-data.js?v=20261024"></script><script src="whoqol-questions.js?v=20261024"></script><script src="calc.js?v=20261024"></script><script src="hra-lesson.js?v=20261025print2"></script><script src="app.js?v=20261025print2"></script>
 </body></html>

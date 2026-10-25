@@ -236,6 +236,6 @@ function download(text,name,type='text/plain'){
   const url=URL.createObjectURL(new Blob(['\ufeff'+text],{type:type+';charset=utf-8'})),a=el('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
 }
 $('export-record').onclick=()=>{try{download(recordText(),'社会医学_'+currentTab+'_计算与应用记录.txt');put('export-status','已导出计算过程与当前填写的应用记录。')}catch(e){put('export-status',e.message)}};
-$('print-record').onclick=()=>window.print();
+$('print-record').onclick=()=>currentTab==='hra'?HraLesson.openPrintPreview():window.print();
 HraLesson.init({download,onChange:updateExportState});
 renderWhoFields();updateWho();loadQaly();updateEq();showTab(location.hash.slice(1));

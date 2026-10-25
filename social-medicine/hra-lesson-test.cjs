@@ -1,6 +1,14 @@
 const assert=require('node:assert/strict'),h=require('./hra-lesson.js');
 const near=(a,b)=>assert.ok(Math.abs(a-b)<1e-8,`${a} != ${b}`);
 const copy=x=>JSON.parse(JSON.stringify(x));
+// The textbook gives lung cancer r=1.9 only for this precise smoking condition.
+const smoking20=h.example();smoking20.before.smoke='twenty';const rs20=h.analyse(smoking20);
+near(rs20.rows[0].factors[5].before,1.5);near(rs20.rows[5].before.applied,1.9);near(rs20.rows[5].before.d,383.8);
+assert.match(rs20.rows[5].factors[0].beforeNote,/第137页/);assert.match(rs20.rows[5].factors[0].beforeNote,/20支/);
+assert.equal(rs20.rows[4].before,null);assert.equal(rs20.rows[7].before,null);assert.equal(rs20.before,null);
+assert.equal(h.validate(JSON.parse(JSON.stringify(smoking20))).before.smoke,'twenty');
+const unspecific=h.example();unspecific.before.smoke='heavy';assert.equal(h.analyse(unspecific).rows[5].before,null);
+const quitting=h.example();quitting.before.smoke='twenty';quitting.after.smoke='never';const rq=h.analyse(quitting);near(rq.rows[5].after.d,40.4);assert.equal(h.riskChange(rq.rows[5].before.d,rq.rows[5].after.d).label,'89.5%');
 const ex=h.example(),r=h.analyse(ex);
 assert.equal(r.complete,true);assert.equal(r.rows.length,12);assert.equal(r.rows.reduce((n,x)=>n+x.factors.length,0),33);assert.equal(r.pending.length,0);
 near(r.before,7167.45);near(r.after,3430.35);near(r.delta,3737.10);near(r.percent,52.13988238494861);near(r.beforeAge.age,43.45601351351351);near(r.afterAge.age,36.29514705882353);

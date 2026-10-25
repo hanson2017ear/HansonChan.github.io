@@ -2,7 +2,7 @@
   'use strict';
   const calc=typeof module!=='undefined'&&module.exports?require('./calc.js'):root.SocialMed;
   const course=typeof module!=='undefined'&&module.exports?require('./course-data.js'):root.CourseData;
-  const source='课堂补充表12-1（第150—151页）、表12-2（第153页）、表12-3（第154页）；课程课件第163—174页。';
+  const source='课堂补充表12-1（第150—151页）、表12-2（第153页）、表12-3（第154页）；课程课件第163—174页；李鲁《社会医学》第5版第137页（肺癌：男性40—44岁、每天20支）。';
   const choose=(id,label,options,hint='')=>({id,label,options,hint});
   const num=(id,label,min,max,unit,hint='')=>({id,label,min,max,unit,hint});
   const fields=[
@@ -12,7 +12,7 @@
     choose('diabetes','糖尿病史',[['none','无'],['controlled','有，已控制'],['yes','有'],['other','其他或待核对']]),
     choose('activity','体力活动',[['sedentary','坐着工作和娱乐'],['some','有些活动的工作'],['moderate','中度锻炼'],['vigorous','较强度锻炼'],['regular','坐着工作，有定期锻炼'],['otherRegular','其他工作，有定期锻炼'],['other','其他或待核对']]),
     choose('chdFamily','冠心病家族史',[['none','无（表12-1给定0.9）'],['old','父母健在，均已满60岁'],['young','父母健在，未满60岁'],['one','父母之一60岁以前死于冠心病'],['both','父母二人60岁以前死于冠心病'],['other','其他或待核对']]),
-    choose('smoke','吸烟',[['never','不吸烟'],['heavy','每天不少于10支'],['light','每天少于10支'],['pipe','雪茄或烟斗'],['recentQuit','戒烟不足10年'],['longQuit','戒烟10年以上'],['other','其他或待核对']]),
+    choose('smoke','吸烟',[['never','不吸烟'],['twenty','每天20支（教材正文示例）'],['heavy','每天不少于10支（未具体到20支）'],['light','每天少于10支'],['pipe','雪茄或烟斗'],['recentQuit','戒烟不足10年'],['longQuit','戒烟10年以上'],['other','其他或待核对']],'第5版第137页补有每天20支时的肺癌分数1.9；其他吸烟情况须分别查相应死因的分数。'),
     choose('weightBasis','体重状况',[['percent','填写超重百分比'],['le10','超重10%以下（表12-2分类）'],['average','降到平均体重（原题条件）'],['other','其他或待核对']],'按教材中的超重百分比填写，和BMI不是同一个指标。'),
     num('excess','超重百分比',0,300,'%','只在体重状况选择“填写超重百分比”时使用。例如超重30%填30。'),
     choose('alcohol','饮酒',[['none','不饮酒'],['yes','饮酒'],['other','其他情况，需相应死因的分数']]),
@@ -116,9 +116,10 @@
     if(!has(v[id]))return missing;
     if(cause===0){
       if(id==='cholesterol'){if(s.policy==='given'&&Number(v[id])===192)return known(.6);return lookup([[180,.5],[220,1],[280,1.5]],v[id])}
-      const map={diabetes:{none:1,controlled:2.5,yes:3},activity:{sedentary:2.5,some:1,moderate:.6,vigorous:.5,regular:1,otherRegular:.5},chdFamily:{none:.9,old:.9,young:1,one:1.2,both:1.4},smoke:{never:.5,heavy:1.5,light:1.1,pipe:1,recentQuit:.7,longQuit:.5}};
+      const map={diabetes:{none:1,controlled:2.5,yes:3},activity:{sedentary:2.5,some:1,moderate:.6,vigorous:.5,regular:1,otherRegular:.5},chdFamily:{none:.9,old:.9,young:1,one:1.2,both:1.4},smoke:{never:.5,twenty:1.5,heavy:1.5,light:1.1,pipe:1,recentQuit:.7,longQuit:.5}};
       if(Object.hasOwn(map[id]||{},v[id]))return{score:map[id][v[id]],note:(id==='chdFamily'&&v[id]==='none'?'表12-1给定':'表12-2分类')+'：'+observed(s,v,id)+' → '+map[id][v[id]]};return unknown;
     }
+    if(cause===5&&v.smoke==='twenty')return{score:1.9,note:'李鲁《社会医学》第5版第137页（PDF第161页）：男性40—44岁，每天吸烟20支，肺癌r＝R＝1.9'};
     const maps=[null,[{none:.5},{25000:2.5},{90:.8,100:.8}],[{frequent:2.5,treated:1.5},{none:1}],[{none:.1}],null,[{never:.2}],[{none:1},{none:1},{none:.1}],[{none:1},{none:1},{never:1}],[{none:1},{none:1},{none:1},{none:1,annual:.3}],null,[{negative:.2},{none:1}],[{middle:1}]];
     if(cause===4){if(id==='cholesterol')return Number(v[id])===192?known(.6):unknown;if(id==='diabetes')return v[id]==='none'?known(1):unknown;if(id==='smoke')return v[id]==='never'?known(.8):unknown}
     const map=maps[cause]?.[index];return map&&Object.hasOwn(map,v[id])?known(map[v[id]]):unknown;
@@ -304,6 +305,34 @@
     });
   }
 
+  function openPrintPreview(){
+    if(!result?.complete||Object.keys(state.drafts||{}).length){$('lesson-status').textContent='请先补齐资料，并应用或放弃系数草稿。';return}
+    const previousFocus=document.activeElement,main=document.querySelector('main'),wasInert=main?.inert;
+    let preview=$('lesson-print-preview');if(!preview){preview=el('section','','lesson-print-preview');preview.id='lesson-print-preview';document.body.append(preview)}
+    preview.replaceChildren();preview.hidden=false;preview.setAttribute('role','dialog');preview.setAttribute('aria-modal','true');preview.setAttribute('aria-label','健康危险因素评价打印排版预览');
+    const tools=el('div','','lesson-print-tools'),close=el('button','返回填写'),print=el('button','打印 / 保存为PDF','primary');close.type=print.type='button';
+    tools.append(el('strong','打印排版预览'),el('span','A4纵向；系统窗口中可选择保存为PDF。实际分页以系统预览为准。'),close,print);preview.append(tools);
+    const paper=el('article','','lesson-print-paper');paper.append(el('p','社会医学 · 课堂练习','lp-kicker'),el('h1','健康危险因素评价'));
+    paper.append(el('p','男性40—44岁参数；实际年龄 '+state.age+' 岁；'+policyLabel(state)+'；'+(state.roundFirst?'R先保留2位小数':'R使用完整精度')+'。','lp-meta'));
+    const summary=el('section','','lp-summary');summary.append(el('h2','结果总览'),$('lesson-metrics').cloneNode(true));
+    summary.lastChild.removeAttribute('id');const totals=$('lesson-summary-rows').closest('table').cloneNode(true);totals.querySelector('tbody').removeAttribute('id');summary.append(totals);
+    const ages=$('lesson-ages').cloneNode(true);ages.removeAttribute('id');summary.append(el('h3','年龄查表'),ages,el('p',$('lesson-age-note').textContent,'lp-age-note'),el('p','评价年龄与增长年龄是风险对应年龄，不代表预计寿命或延寿年数。','lp-meta'));paper.append(summary);
+    const chart=el('section','','lp-page-start');chart.append(el('h2','改善前后对照'));const figure=$('lesson-risk-chart').closest('figure').cloneNode(true);figure.querySelector('#lesson-risk-chart').removeAttribute('id');chart.append(figure,el('p','计算式：R＝Σ(r＞1时的r−1)＋Π(r≤1时的r)；D＝M×R。各项D相加得到总危险。表末“占原总危险%”以原总危险为分母；图旁箭头以该项当前D为分母。','lp-meta'));paper.append(chart);
+    const factors=el('section','','lp-page-start');factors.append(el('h2','表12-1 · 逐项取值'),el('p','总览对应原表第1、2、6、7、10—13列；以下明细对应第3、4、5、8、9列。两部分合起来保留完整13列内容。','lp-meta'));
+    for(const row of result.rows){
+      const block=el('section','','lp-cause');block.append(el('h3',row.name),el('p','基准率M＝'+row.baseline+' /10万；R：'+fmt(row.before.applied,2)+' → '+fmt(row.after.applied,2)+'；D：'+fmt(row.before.d,2)+' → '+fmt(row.after.d,2)+' /10万。','lp-meta'));
+      const table=el('table','','lp-factor-table'),head=el('thead'),tr=el('tr');for(const label of ['(3)因素','(4)当前指标','(5)r','(8)改善设定','(9)新r']){const th=el('th',label);th.scope='col';tr.append(th)}head.append(tr);table.append(head);const body=el('tbody');
+      for(const f of row.factors){const line=el('tr');for(const value of [f.name,f.beforeValue,numberCell(f.before),f.afterChange,numberCell(f.after)])line.append(el('td',value));body.append(line)}table.append(body);block.append(table);factors.append(block);
+    }
+    paper.append(factors);const sources=el('section','','lp-sources');sources.append(el('h2','取值依据'),el('p',source),el('p','第5版第136页将完整统计模型指向配套融合教材。现有纸本、课件与补充表没有列出的阳性条件不自动赋分，也不借用冠心病或其他模型的分数。'));
+    for(const row of result.rows)for(const f of row.factors){const notes=[...new Set([f.beforeNote,f.afterNote.replace(/^沿用当前分数；/,'')])].filter(n=>/^手工补充：/.test(n));if(notes.length)sources.append(el('p',row.name+'／'+f.name+'：'+notes.join('；')))}
+    const notes=[['这次练习的发现',$('reflection-observation')?.value],['接下来的打算',$('reflection-action')?.value]];for(const [label,text]of notes)if(text?.trim())sources.append(el('h3',label),el('p',text));sources.append(el('p','所用数值为课堂历史参数，仅供课程演算。','lp-meta'));paper.append(sources);preview.append(paper);
+    const leave=()=>{preview.hidden=true;document.body.classList.remove('previewing-lesson','printing-lesson');if(main)main.inert=wasInert;previousFocus?.focus({preventScroll:true})};
+    close.onclick=leave;print.onclick=()=>{document.body.classList.add('printing-lesson');root.print()};
+    preview.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();leave()}else if(e.key==='Tab'){e.preventDefault();(document.activeElement===close?print:close).focus()}};
+    document.body.classList.add('previewing-lesson');if(main)main.inert=true;preview.scrollTop=0;close.focus({preventScroll:true});
+  }
+
   function hasWork(){return Object.values(state.before).some(has)||Object.values(state.after).some(has)||Object.keys(state.overrides).length>0||Object.keys(state.drafts||{}).length>0}
   function replaceAllowed(){return !hasWork()||root.confirm('当前课堂资料将被替换。需要保留的话请先保存，继续吗？')}
   function init(options={}){
@@ -319,10 +348,10 @@
     $('lesson-save').onclick=()=>{const s=validate(state);save(JSON.stringify(s,null,2),'健康危险因素评价_课堂资料.json','application/json');$('lesson-status').textContent=Object.keys(s.drafts).length?'填写内容和未应用的系数草稿已保存，下次可以导入接着填。':'填写内容已保存，下次可以导入接着填。'};
     $('lesson-import').onchange=async()=>{const input=$('lesson-import'),file=input.files?.[0];if(!file)return;try{if(file.size>150000)throw Error('请选择小于150KB的单份课堂资料');const next=validate(JSON.parse((await file.text()).replace(/^\uFEFF/,'')));if(!replaceAllowed())return;state=next;renderFields();render();$('lesson-status').textContent='已恢复课堂资料。'}catch(e){$('lesson-status').textContent='没有导入，原资料保留。'+(e instanceof SyntaxError?'文件不是有效JSON。':e.message)}finally{input.value=''}};
     $('lesson-csv').onclick=()=>{try{save(csv(state),'健康危险因素评价_表12-1完整结果.csv','text/csv');$('lesson-status').textContent='已导出表12-1的13列、分数依据、合计及查表年龄。'}catch(e){$('lesson-status').textContent=e.message}};
-    $('lesson-print').onclick=()=>{document.body.classList.add('printing-lesson');root.print()};root.addEventListener('afterprint',()=>document.body.classList.remove('printing-lesson'));
+    $('lesson-print').textContent='打印预览 / 保存PDF';$('lesson-print').onclick=openPrintPreview;root.addEventListener('beforeprint',()=>{if($('lesson-print-preview')&&!$('lesson-print-preview').hidden)document.body.classList.add('printing-lesson')});root.addEventListener('afterprint',()=>document.body.classList.remove('printing-lesson'));
     $('lesson-view').onclick=()=>{$('lesson-results-title').focus();$('lesson-results-title').scrollIntoView({block:'start'})};
     renderFields();render();
   }
-  const api={fields,groups,bindings,source,ageRows,blank,example,validate,analyse,ageLookup,riskChange,csv,report,setVariable,applyCoefficient,init,get ready(){return !!result?.complete&&!Object.keys(state.drafts||{}).length},get result(){return result},get state(){return state}};
+  const api={fields,groups,bindings,source,ageRows,blank,example,validate,analyse,ageLookup,riskChange,csv,report,setVariable,applyCoefficient,openPrintPreview,init,get ready(){return !!result?.complete&&!Object.keys(state.drafts||{}).length},get result(){return result},get state(){return state}};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.HraLesson=api;
 })(typeof window!=='undefined'?window:globalThis);
