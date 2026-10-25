@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="填写WHOQOL-100问卷，记录个人健康危险因素、对照生活习惯，并复习HRA与QALY课堂计算。">
+  <title>旧版生活方式记录备份</title>
+  <link rel="stylesheet" href="style.css?v=20261024s">
+</head>
+<body>
+<a class="skip" href="#workspace">跳到计算区</a>
+<main><p class="lesson-archive-note">旧版记录备份页：用于取回原有生活方式资料。<a href="index.html#hra">返回新版课堂三表计算器</a>。</p>
+  <header class="masthead">
+    <div><p class="eyebrow">社会医学 · 课后练习</p><h1>社会医学课程练习</h1><p class="lead">填一份自己的健康记录，也把课堂上的评价方法用一遍。</p></div>
+    <div class="edition"><span>李鲁主编 · 第5版</span><small>结合课程例题整理</small></div>
+  </header>
+  <nav role="tablist" aria-label="练习模块">
+    <button id="tab-whoqol" role="tab" aria-selected="true" aria-controls="whoqol" data-tab="whoqol">生命质量问卷</button>
+    <button id="tab-hra" role="tab" aria-selected="false" aria-controls="hra" data-tab="hra" tabindex="-1">健康危险因素评价</button>
+    <button id="tab-qaly" role="tab" aria-selected="false" aria-controls="qaly" data-tab="qaly" tabindex="-1">QALY计算</button>
+    <button id="tab-notes" role="tab" aria-selected="false" aria-controls="notes" data-tab="notes" tabindex="-1">计分说明与来源</button>
+  </nav>
+  <div id="workspace" tabindex="-1">
+  <section id="whoqol" class="panel" role="tabpanel" aria-labelledby="tab-whoqol">
+    <div class="intro"><div><p class="kicker">WHOQOL-100 · 课堂问卷</p><h2>生命质量问卷</h2><p>请回想<b>最近两周</b>的情况，选择最符合自己感受的一项。共100题，每组4题。</p></div><div class="intro-note">题目与选项按课堂问卷整理<br>填完整后显示评分</div></div>
+    <p id="who-mode" class="questionnaire-note" role="status"></p>
+    <div class="toolbar"><button id="who-save" class="primary" disabled>保存答卷</button><label class="file-button">导入答卷<input id="who-import" type="file" accept=".csv,text/csv"></label><button id="who-clear">重新填写</button></div>
+    <p class="help" id="who-save-status" role="status">离开前请保存答卷。未填完也可以保存，下次导入后接着填。</p>
+    <details class="who-examples"><summary>课堂示例与空白CSV</summary><div class="toolbar"><button id="who-demo">查看示例答卷</button><button id="who-followup">查看示例前后变化</button><button id="who-template">下载空白CSV</button></div><p class="help">示例使用模拟答案，方便核对计分。已有纸质答卷也可以按题目代码填写CSV后导入，选项仍按原始A—E记录。</p></details>
+    <div class="workspace-grid">
+      <div class="question-pane">
+        <div class="who-progress-block"><div class="section-top"><h3>填写问卷</h3><span id="who-progress" class="counter" aria-live="polite">已答 0 / 100 题</span></div><progress id="who-progress-bar" value="0" max="100" aria-label="作答进度"></progress></div>
+        <div id="who-question-top" class="who-group-picker"><label for="who-group">选择题组</label><select id="who-group" aria-describedby="who-group-context"></select><small id="who-group-context"></small></div>
+        <div id="who-fields" class="who-fields"></div>
+        <div class="who-page-controls"><button id="who-prev">上一组</button><button id="who-review" class="text-button">查找漏答</button><button id="who-next" class="primary">下一组</button></div>
+        <p id="who-navigation-note" class="help" role="status"></p>
+        <p class="help question-source">题目来源：课堂《生存质量测定量表（WHOQOL-100）》第1—7页。按方面分组显示，保留原题代码；选项文字不作统一替换。</p>
+        <p id="who-error" class="error" role="status"></p>
+        <details class="process"><summary>查看计分过程</summary><label class="select-label">选择方面<select id="who-facet"></select></label><div id="who-steps" class="steps"></div></details>
+      </div>
+      <aside class="score-pane" id="who-results">
+        <div class="section-top"><h3 id="who-result-title" tabindex="-1">评分结果</h3><span class="help">0—100 分</span></div>
+        <div id="who-legend" class="legend"></div>
+        <div id="who-chart" class="domain-chart" aria-label="WHOQOL-100六领域得分"></div>
+        <div id="who-result-details" hidden>
+          <div class="overall"><span>课堂五领域均分</span><strong id="who-class-summary">—</strong><small>生理、心理、独立性、社会关系、环境五个领域的平均分</small></div>
+          <div class="overall"><span>总体生命质量与健康（G1—G4）</span><strong id="who-general">—</strong><small id="who-general-items"></small></div>
+          <div class="toolbar compact"><button id="who-reference">保留本次结果作对照</button><button id="who-unreference" hidden>取消对照</button></div>
+          <p id="who-reference-note" class="help"></p>
+        </div>
+        <p id="who-comment" class="help"></p>
+        <div class="marginal-note"><b>如何理解分数</b><p>分数较高，表示该领域的生命质量较好。还要结合睡眠、精力等具体方面和本人的生活情况分析，不能仅凭分数判断是否患病。</p></div>
+      </aside>
+    </div>
+  </section>
+  <section id="hra" class="panel" role="tabpanel" aria-labelledby="tab-hra" hidden>
+    <div class="intro"><div><p class="kicker">填写资料 · 计算评分 · 看懂结果</p><h2>健康危险因素评价</h2><p>个人填写可计算中国糖尿病风险评分，并整理生活习惯评价表。课上的组合危险分数、死亡危险和评价年龄，放在“课堂综合风险计算”里。</p></div><div class="intro-note">个人记录在浏览器内计算<br>不上传填写的资料</div></div>
+    <div class="hra-switch" role="group" aria-label="选择危险因素评价方式"><button id="hra-personal-tab" class="active" aria-pressed="true" aria-controls="hra-personal">个人风险评分与记录</button><button id="hra-example-tab" aria-pressed="false" aria-controls="hra-classroom">课堂综合风险计算</button></div>
+    <div id="hra-personal">
+      <div class="toolbar"><button id="personal-save" class="primary" disabled>保存这份资料</button><label class="file-button">导入上次资料<input id="personal-import" type="file" accept=".json,application/json"></label><button id="personal-jump">查看个人评价表</button><button id="personal-clear">重新填写</button></div>
+      <p id="personal-status" class="help" role="status">风险评分用到6项指标；填齐必要资料后自动计算。生活习惯按最近一周记录。不清楚的项目可留空，离开前请保存。</p>
+      <div class="personal-layout"><div><form id="personal-form" novalidate aria-label="个人健康危险因素资料"></form><details class="process"><summary>看看模拟填法</summary><p class="help">这是一份虚构的大学生记录，只用于了解页面怎样评价，不代表你的情况。</p><button id="personal-demo" type="button">载入模拟资料</button></details></div>
+        <aside class="personal-results" aria-labelledby="personal-result-title"><p class="kicker">结果速览</p><h3 id="personal-result-title" tabindex="-1">填写后在这里看结果</h3><p id="personal-error" class="error" role="status"></p><div id="personal-score-preview" aria-live="polite"></div><div id="personal-summary" aria-live="polite"></div><div id="personal-measures"></div><div id="personal-comparison" class="help"></div><div class="toolbar compact"><button id="personal-reference" disabled>保留本次，之后作对照</button><button id="personal-unreference" hidden>取消对照</button></div><div id="personal-next"></div><div id="personal-print-data"></div><p class="marginal-note">上方的糖尿病评分按原研究计分；下方的8项习惯数是另一份日常参照记录，两者不合并成“总健康分”。</p></aside>
+      </div>
+      <section id="personal-report" class="personal-report" aria-labelledby="personal-report-title">
+        <div class="report-heading"><div><p class="kicker">根据本次填写生成 · 随资料更新</p><h3 id="personal-report-title" tabindex="-1">个人危险因素评价表</h3><p id="personal-report-meta" class="help"></p></div><div class="toolbar"><button id="personal-csv" class="primary" disabled>下载评价表 CSV</button><button id="personal-print" disabled>打印 / 保存为PDF</button><button id="personal-edit">返回填写区</button></div></div>
+        <p id="personal-report-empty" class="report-empty">填写资料或导入保存的文件后，这里会生成你的评价表。不清楚的项目可以留空，表中会保留“待补资料”。</p>
+        <div id="personal-report-content" hidden>
+          <section class="diabetes-report" aria-labelledby="personal-diabetes-title">
+            <div class="report-heading"><div><p class="kicker">个人定量评价</p><h4 id="personal-diabetes-title" tabindex="-1">中国糖尿病风险评分</h4><p class="help">NCDRS · 中国20—74岁、尚未确诊糖尿病的一般成年人。用于筛查未诊断的2型糖尿病，不是全病种风险或未来发病概率。</p></div><button id="personal-diabetes-csv" disabled>下载风险评分表 CSV</button></div>
+            <div id="personal-diabetes-result" aria-live="polite"></div>
+            <div class="table-scroll"><table class="diabetes-score-table"><caption>6项指标的原始资料与分值</caption><thead><tr><th scope="col">指标</th><th scope="col">本次资料</th><th scope="col">对应分组</th><th scope="col">分值</th></tr></thead><tbody id="personal-diabetes-rows"></tbody></table></div>
+            <p class="help">BMI用身高体重计算，按未四舍五入的结果判组。糖尿病家族史仅指父母、兄弟姐妹或子女。缺项不补0，未确认适用条件时不计算总分。</p>
+            <p class="help">来源：<a href="https://doi.org/10.2337/dc13-0593" target="_blank" rel="noopener">Zhou等，Diabetes Care，2013，表2</a> · <a href="https://stacks.cdc.gov/view/cdc/28193/cdc_28193_DS1.pdf" target="_blank" rel="noopener">原文及完整评分表</a>。</p>
+            <details class="process"><summary>查看全部计分规则</summary><div id="personal-diabetes-rules"></div></details>
+            <p class="help">若想进一步评估心脑血管病，可使用国家心血管病中心的<a href="https://www.cvdrisk.com.cn/ASCVD/Eval" target="_blank" rel="noopener">China-PAR官方评估工具</a>。需要总胆固醇、HDL-C等资料；点击会打开外部网站，本页不会替你发送已填资料。</p>
+          </section>
+          <div class="report-visuals"><figure id="personal-habit-figure" aria-labelledby="personal-habit-title"><figcaption id="personal-habit-title">8项生活习惯的参照情况</figcaption><div id="personal-habit-chart"></div><p class="help">只统计有氧活动、力量训练、睡眠、蔬果、盐、烟草、二手烟和饮酒。体检与社会环境另列，不计入这8项。</p></figure><figure id="personal-activity-figure" aria-labelledby="personal-activity-title"><figcaption id="personal-activity-title">每周有氧活动量</figcaption><div id="personal-activity-chart"></div><p class="help">统一换算为中等强度等效分钟：中等强度分钟＋2×较大强度分钟。单位：分钟/周。</p></figure></div>
+          <p class="report-table-note">“需要留意”表示值得进一步了解或调整，不等同于疾病诊断。体检数值需结合原报告与个别情况解释。</p>
+          <div class="risk-table-wrap"><table id="personal-risk-table" class="risk-table"><caption>个人危险因素逐项评价</caption><thead><tr><th scope="col">项目</th><th scope="col">本次资料</th><th scope="col">参照与依据</th><th scope="col">本次评价</th><th scope="col">可以怎样做</th><th scope="col">来源</th></tr></thead><tbody id="personal-risk-rows"></tbody></table></div>
+          <div id="personal-report-plan" class="report-plan"></div>
+          <p class="help report-limit">糖尿病风险评分与下面的逐项习惯参照分别解释，不提供综合患病概率。缺项不补0，也不把未填的项目当成健康。</p>
+        </div>
+      </section>
+      <details class="process"><summary>这些结果是怎样算出来的？</summary><p>中国糖尿病风险评分按原研究表2，将年龄、性别、BMI、腰围、收缩压和一级亲属糖尿病史的分值相加，总分0—51，筛查切点为25分。它是课堂方法的一个现实应用，不是把41岁男性例题的系数套给所有人。生活习惯另按WHO和国内公开资料逐项参照。</p><div class="formula">糖尿病风险得分＝年龄分＋性别分＋BMI分＋腰围分＋收缩压分＋糖尿病家族史分<br>BMI＝体重（kg）÷身高（m）²<br>中等强度等效活动量＝每周中等强度分钟＋2×每周较大强度分钟</div><p class="help">已知、未知分别列出，不为缺项补分。运动和饮食目标只作18—64岁一般成年人的日常参照，与糖尿病评分20—74岁的年龄范围不同。孕产期、医生要求限制活动等情况需采用个别建议。生活习惯数不参与糖尿病评分，体检值也不换成自编的总健康分。</p><ul id="personal-sources" class="personal-sources"></ul></details>
+    </div>
+    <div id="hra-classroom" hidden>
+    <p class="classroom-context">以下是课堂表中某地<b>41岁男性</b>的12项死因例题；表中的率值单位均为每10万人。它与个人填写区分别保存，切换不会改动另一边的资料。</p>
+    <div class="toolbar"><button id="hra-demo" class="primary">恢复完整例题</button><button id="hra-activity">只改变体力活动</button><button id="hra-nochange">保持原状</button></div>
+    <label class="check"><input type="checkbox" id="roundfirst" checked>按课堂表格：组合危险分数先保留 2 位，再乘基准死亡率</label>
+    <div id="hra-summary" class="metric-band" aria-live="polite"></div><p id="hra-error" class="error" role="status"></p>
+    <div class="section-top"><h3>各死因的结果</h3><span class="help">点击死因，查看或修改对应因素</span></div>
+    <div class="table-scroll"><table class="hra-table"><caption class="sr-only">教材12项死因的改善前后危险</caption><thead><tr><th>死因</th><th>基准率 M</th><th>当前 R</th><th>改善后 R</th><th>当前 D</th><th>改善后 D</th><th>减少量</th><th>占原总危险</th></tr></thead><tbody id="hra-rows"></tbody></table></div>
+    <div class="detail-grid"><div class="factor-editor"><div class="section-top"><h3 id="factor-title">冠心病：因素与分数</h3><select id="cause-select" aria-label="选择要编辑的死因"></select></div><div id="factor-fields"></div><div class="steps" id="hra-steps"></div></div><aside><h3>实际年龄与评价年龄</h3><div id="age-chart" class="age-chart"></div><p id="age-explain" class="help"></p><details><summary>年龄内插与参照点</summary><div id="age-steps" class="steps"></div></details><p class="marginal-note">这里只使用例题对应的年龄参照表，说明风险大致相当于哪个年龄的水平，不能用来预测寿命。超出表内范围时不计算。</p></aside></div>
+    <details class="source-note"><summary>核对第五版教材与课堂补充表的数值</summary><ul><li>第五版表11-1自杀项改善后印为369；课堂补充表12-1已列396，与264×1.5一致。本工具采用396。</li><li>第五版肺炎改善后的组合分数栏印为0.1，但危险值列111；课堂补充表已列R＝1。工具按1×1×1算得R＝1、D＝111。</li><li>第五版分项列示百分比相加为52.2%；课堂补充表改为52.1%。统一用总量相除为3737.10÷7167.45＝52.14%，保留一位即52.1%。</li></ul></details>
+    <details class="process" open><summary>测量值怎样转换为危险分数？</summary><p class="help">按课堂表12-2的男性40—44岁组。连续指标在相邻参照点间内插，分类指标按题目给定类别取值；不对区段外数据外推。</p><div class="converter-fields"><label>危险指标<select id="conversion-kind"></select></label><label id="conversion-number-label">测量值<input id="conversion-number" type="number" step="any" value="192"></label><label id="conversion-option-label" hidden>对应类别<select id="conversion-option"></select></label></div><p id="conversion-result" class="formula"></p><p id="conversion-steps" class="steps"></p><p id="conversion-error" class="error" role="status"></p><button id="conversion-apply">用于冠心病的当前分数</button><p class="help">点击后会把上面的转换结果填到冠心病的当前分数里，改善后分数需要另填。例题原有的胆固醇0.6、超重30%对应1.3，恢复例题时仍使用这两个值。</p></details>
+    <details class="process"><summary>单个指标的内插练习：胆固醇 192 mg/dl</summary><p class="help">这道内插题得 0.65；综合例题表中使用 0.6。两道题按各自给定的数据计算。</p><div class="inline-fields"><label>下限 x₁<input id="x1" type="number" step="any" value="180"></label><label>分数 r₁<input id="v1" type="number" step="any" value="0.5"></label><label>上限 x₂<input id="x2" type="number" step="any" value="220"></label><label>分数 r₂<input id="v2" type="number" step="any" value="1"></label><label>待估值 x<input id="x" type="number" step="any" value="192"></label></div><p id="iresult" class="formula"></p><p id="isteps" class="help"></p><p id="ierror" class="error" role="status"></p></details>
+    <p class="help">来源：课堂补充表12-1、12-2、12-3；《社会医学》第5版第134—140页；课程课件第165—174页。这是教材中的历史模型，用于理解计算方法，不能用来估计个人现在的患病风险或安排筛查。</p>
+    </div>
+  </section>
+  <section id="qaly" class="panel" role="tabpanel" aria-labelledby="tab-qaly" hidden>
+    <div class="intro"><div><p class="kicker">课程课件第 139 页</p><h2>质量调整生命年计算</h2><p>按养老院例题，将各健康状态的持续年数乘以相应权重，再求和。</p></div><div class="intro-note">QALY = Σ Y<sub>k</sub>W<sub>k</sub></div></div>
+    <div class="workspace-grid"><div><div class="table-scroll"><table><thead><tr><th>健康状态</th><th>年数 Y</th><th>权重 W</th><th>Y×W</th><th></th></tr></thead><tbody id="qrows"></tbody></table></div><div class="toolbar"><button id="loadq" class="primary">载入课堂例题</button><button id="addrow">添加健康状态</button></div><p id="qerror" class="error" role="status"></p><div id="qsteps" class="steps"></div></div><aside class="score-pane"><h3>质量调整生命年</h3><div class="qaly-number"><strong id="qtotal">—</strong><span>QALY</span></div><p id="ytotal" class="help"></p><div id="qbars"></div><div class="marginal-note"><b>结果说明</b><p>71.6 年是未调整的年数；用题目给定权重计算，结果约为 68.5 QALY。评价健康管理效果时，既要看生存时间，也要看生活质量。</p></div></aside></div>
+    <details class="process"><summary>EQ-5D-3L编码练习</summary><p class="help">对照已有问卷选择等级。这里记录健康状态编码与VAS，不自动计算效用指数。</p><div class="eq-grid" id="eqfields"></div><div class="inline-fields"><label>EQ VAS 自评分（0—100）<input type="number" min="0" max="100" value="75" id="vas"></label><div><span class="help">健康状态编码</span><strong id="eqcode" class="eqcode"></strong></div></div><p id="eqerror" class="error" role="status"></p><p>状态编码、VAS 与效用指数是不同结果。不能用等级相加或 VAS÷100 代替 QALY 的效用权重。</p></details>
+  </section>
+  <section id="notes" class="panel sources" role="tabpanel" aria-labelledby="tab-notes" hidden>
+    <p class="kicker">课程资料</p><h2>计分说明与资料来源</h2>
+    <h3>WHOQOL-100</h3><p>课堂评分说明第8页使用 A—E，正向题计1—5、反向题计5—1。工具按原条目代码 F1.1—F24.4、G1—G4 处理，不按不同译本的页面题序映射。采用完整作答模式：100题齐全后才计算，不自动填补缺失值。</p><ol><li>按课堂表的30个反向条目转向，再把每个方面的4题相加，得4—20分。</li><li>方面标准分＝（转向后方面分−4）÷16×100；同一领域的方面标准分求平均，得领域0—100分。</li><li>这与WHO手册先保留F1、F8、F11的负向原分、进入领域时再做24−方面分的方法，在完整作答时等价；两种流程不能重复反向。</li><li>课堂汇总分＝（生理＋心理＋独立性＋社会关系＋环境）÷5，按课堂评分说明单列。它是课堂约定的五领域均分，不称为WHO推荐的统一总分。</li><li>六领域及G1—G4仍分别呈现，不设诊断界值，也不换算成QALY效用。</li></ol>
+    <p>课堂反向条目共30个：F1.1—F1.4、F2.2、F2.4、F3.2、F3.4、F7.2、F7.3、F8.1—F8.4、F9.3、F9.4、F10.2、F10.4、F11.1—F11.4、F13.1、F15.4、F16.3、F18.2、F18.4、F22.2、F23.2、F23.4。</p>
+    <p>依据：WHO 网站提供的 Australian version: Manual and questionnaires WHOQOL-100 and BREF，第19—22页（PDF第31—34页），含条目代码对应关系及完整领域公式。输入前请与所持量表的条目代码核对。</p>
+    <p><a href="https://www.who.int/tools/whoqol/whoqol-100" target="_blank" rel="noopener">WHOQOL-100 官方资料页</a> · <a href="https://cdn.who.int/media/docs/default-source/publishing-policies/whoqol/english-australia-whoqol-100---bref.zip?sfvrsn=ae797474_2" target="_blank" rel="noopener">WHO 提供的手册原文件（ZIP）</a></p>
+    <h3>健康危险因素评价</h3><p>个人填写区计算“中国糖尿病风险评分”（NCDRS）：年龄、性别、BMI、腰围、收缩压及一级亲属糖尿病史6项相加，总分0—51，筛查切点≥25分。来源为Zhou等2013年原研究表2，适用于中国20—74岁、尚未确诊糖尿病的人群。缺项或不适用时不计算总分，分值不换算为发病概率。孕产期或需个别方案者，本页不作统一评分。8项日常习惯另行参照，不加进这个分数。个人资料和临时对照可保存后导入；来源网址见个人填写页。</p><div class="formula">课堂综合计算：<br>R = Σ<sub>rᵢ&gt;1</sub>(rᵢ−1) + Π<sub>rᵢ≤1</sub>rᵢ<br>D = M×R；总危险 = ΣD<br>下降比例 =（改善前总危险−改善后总危险）÷改善前总危险×100%</div><p>大于 1 的分数减 1 后相加，其余分数相乘，再合并。只有一个因素时，R 就等于该因素分数；空加法为 0，空乘积为 1。默认先把 R 保留 2 位以复现课堂表格，可取消勾选比较完整精度。该算法不通用于所有现代危险预测模型。</p><p>教材：李鲁主编《社会医学》第5版，人民卫生出版社，2017，ISBN 9787117246644。表11-1（第134—135页）、表11-3（第138—139页）、危险降低及应用（第139—140页）。年龄演示只录入表11-3中“41岁男性”相关参照区段，区段外不外推。</p>
+    <h3>QALY 与课堂资料</h3><p>QALY = Σ（持续年数×对应健康权重）；课堂例题 65.2×1＋4.5×0.59＋1.9×0.34＝68.501，课件近似为 68.5。保留负效用输入，但应由相应的正式价值集或题目提供，不能自编换算。</p><p>课程课件《社会医学》：第138—139页为 EQ-5D、QALY 练习，第165—174页为危险分数、内插、死亡危险及年龄对照。</p><p><a href="https://euroqol.org/information-and-support/euroqol-instruments/eq-5d-3l/" target="_blank" rel="noopener">EuroQol：EQ-5D-3L</a> · <a href="https://euroqol.org/information-and-support/resources/value-sets/" target="_blank" rel="noopener">EuroQol：效用价值集</a></p>
+    <h3>答卷与示例</h3><p>页面打开时是空白问卷。“示例答卷”和“示例前后变化”使用模拟答案，只供学习计分，不能当成真实调查或干预结果。答卷在本页计算，不上传。未填完也可以保存为CSV，下次导入继续；刷新后，当前答案、对照和文字记录会清空。</p><p><a href="https://github.com/hanson2017ear/HansonChan.github.io/tree/main/social-medicine" target="_blank" rel="noopener">工具源文件与核对测试</a></p>
+  </section>
+  </div>
+  <section id="application" class="application" aria-labelledby="application-title">
+    <div><p class="kicker">应用或启发</p><h2 id="application-title">这次练习的应用与体会</h2><p id="application-hint" class="help"></p><div class="reflection-fields"><label>你注意到了什么？<textarea id="reflection-observation" rows="3" placeholder="可以写具体的发现，也可以记下还没想明白的问题。"></textarea></label><label>接下来可以怎样做？<textarea id="reflection-action" rows="3" placeholder="想改善哪件事？准备怎么做、什么时候再看结果？"></textarea></label></div><div class="toolbar"><button id="reflection-example">看看写法示例</button><button id="export-record" class="primary">导出结果与笔记</button><button id="print-record">打印当前页面</button></div><p id="export-status" class="help" role="status"></p></div>
+    <aside class="qr-block"><img id="tool-qr" src="qr-whoqol.svg" width="118" height="118" alt="生命质量评分工具入口二维码"><p>工具入口</p><a id="tool-link" href="https://hanson2017ear.github.io/HansonChan.github.io/social-medicine/#whoqol">打开本页</a><small>扫码后可在手机上使用</small></aside>
+  </section>
+  <footer><span>社会医学课程练习 · 2026.10</span><span>答案不上传，离开前请保存。</span></footer>
+</main>
+<script src="course-data.js?v=20261024"></script><script src="whoqol-questions.js?v=20261024"></script><script src="calc.js?v=20261024"></script><script src="personal-hra.js?v=20261024s"></script><script src="legacy-app.js?v=20261024lesson"></script>
+</body></html>

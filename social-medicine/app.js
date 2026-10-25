@@ -7,7 +7,7 @@ const put=(id,value)=>{$(id).textContent=value};
 const letter=value=>value===''||value===undefined?'':String.fromCharCode(64+SocialMed.answerValue(value));
 const online='https://hanson2017ear.github.io/HansonChan.github.io/social-medicine/';
 let raw={},whoMode='自行填写的答卷',whoResult=null,reference=null,whoGroupIndex=0;
-let causes=copy(CourseData.hraCase),causeIndex=0,hraResult=null,qResult=null,currentTab='whoqol';
+let qResult=null,currentTab='whoqol';
 const reflections={whoqol:{observation:'',action:''},hra:{observation:'',action:''},qaly:{observation:'',action:''}};
 
 function renderWhoFields(){
@@ -145,59 +145,6 @@ $('who-import').onchange=async event=>{
   finally{event.target.value=''}
 };
 
-function renderFactorEditor(){
-  const cause=causes[causeIndex];put('factor-title',cause.name+'：因素与分数');$('cause-select').value=String(causeIndex);
-  $('factor-fields').replaceChildren();
-  const head=el('div','','factor-head');['因素 / 教材观察值','当前分数','改善后分数'].forEach(t=>head.append(el('span',t)));$('factor-fields').append(head);
-  cause.factors.forEach((factor,i)=>{
-    const row=el('div','','factor-line'),label=el('div',factor.name);label.append(el('small',factor.observed));row.append(label);
-    for(const field of ['before','after']){
-      const input=el('input');input.type='number';input.min='0';input.step='any';input.value=factor[field];
-      input.setAttribute('aria-label',cause.name+' '+factor.name+' '+(field==='before'?'当前':'改善后')+'危险分数');
-      input.addEventListener('input',()=>{factor[field]=input.value;updateHra();row.querySelectorAll('input')[1].classList.toggle('changed',String(factor.before)!==String(factor.after))});
-      if(field==='after'&&factor.after!==factor.before)input.className='changed';row.append(input);
-    }$('factor-fields').append(row);
-  });
-}
-function riskSteps(r,title){
-  return title+'\n加法部分 X＝'+(r.high.length?r.high.map(v=>'('+v+'−1)').join('＋'):'0')+'＝'+fmt(r.x,6)+
-    '\n乘法部分 Y＝'+(r.low.length?r.low.join('×'):'1（空乘积）')+'＝'+fmt(r.y,6)+
-    '\nR完整值＝'+fmt(r.r,6)+'；本次采用R＝'+fmt(r.applied,6)+
-    '\nD＝'+r.m+'×'+fmt(r.applied,6)+'＝'+fmt(r.d,6)+' / 10万';
-}
-function updateHra(){
-  hraResult=null;put('hra-error','');$('hra-rows').replaceChildren();$('hra-summary').replaceChildren();$('age-chart').replaceChildren();
-  try{
-    hraResult=SocialMed.assessment(causes,$('roundfirst').checked);
-    [['当前总危险',hraResult.before,'每10万人'],['改善后总危险',hraResult.after,'每10万人'],['减少的危险',hraResult.delta,'每10万人'],['总危险下降',hraResult.percent,'%，按总量相除']].forEach(([name,value,unit])=>{
-      const d=el('div','','metric');d.append(el('span',name),el('strong',fmt(value,2)),el('small',unit));$('hra-summary').append(d);
-    });
-    hraResult.rows.forEach((row,i)=>{
-      const tr=el('tr');if(i===causeIndex)tr.className='selected';
-      const first=el('td'),button=el('button',row.name,'row-select');button.setAttribute('aria-label','查看'+row.name+'因素');
-      button.onclick=()=>{causeIndex=i;renderFactorEditor();updateHra()};first.append(button);tr.append(first);
-      [row.baseline,row.before.applied,row.after.applied,row.before.d,row.after.d,row.delta].forEach(v=>tr.append(el('td',fmt(v,2))));tr.append(el('td',fmt(row.contribution,2)+'%'));$('hra-rows').append(tr);
-    });
-    const selected=hraResult.rows[causeIndex];put('hra-steps',riskSteps(selected.before,'当前')+'\n\n'+riskSteps(selected.after,'改善后'));
-    const before=SocialMed.tableAge(hraResult.before,CourseData.age41Male),after=SocialMed.tableAge(hraResult.after,CourseData.age41Male);
-    [['实际年龄',41],['评价年龄（内插）',before?.age],['增长年龄（内插）',after?.age]].forEach(([label,value])=>{
-      const row=el('div','','age-row');row.append(el('span',label),el('strong',value===undefined?'超出区段':fmt(value,2)+' 岁'));$('age-chart').append(row);
-    });
-    put('age-explain','教材查表约为43.5岁、36岁。按相邻参照点内插，完整例题得到43.46岁、36.30岁。这些年龄用来比较风险水平，差值不等于实际能多活的年数。');
-    const describe=(v,name,a)=>!a?name+'：超出当前录入的3030—10190参照区段，不外推。':name+'：'+fmt(v,2)+'位于'+a.low[0]+'('+a.low[1]+'岁)与'+a.high[0]+'('+a.high[1]+'岁)之间，内插得'+fmt(a.age,4)+'岁。';
-    put('age-steps',describe(hraResult.before,'评价年龄',before)+'\n'+describe(hraResult.after,'增长年龄',after));
-  }catch(e){put('hra-error',e.message);put('hra-steps','先补齐有效分数，再显示计算过程。');put('age-explain','');put('age-steps','');$('hra-summary').append(el('div','请核对因素输入；结果暂不显示。','help'))}
-  updateExportState();
-}
-function loadHra(mode='full'){
-  causes=copy(CourseData.hraCase);
-  if(mode!=='full')causes.forEach(c=>c.factors.forEach(f=>{if(mode==='none'||f.action!=='活动')f.after=f.before}));
-  causeIndex=0;$('roundfirst').checked=true;renderFactorEditor();updateHra();
-}
-CourseData.hraCase.forEach((c,i)=>{const option=el('option',c.name);option.value=i;$('cause-select').append(option)});
-$('cause-select').onchange=()=>{causeIndex=Number($('cause-select').value);renderFactorEditor();updateHra()};
-$('hra-demo').onclick=()=>loadHra();$('hra-activity').onclick=()=>loadHra('activity');$('hra-nochange').onclick=()=>loadHra('none');$('roundfirst').onchange=updateHra;
-
 const qExample=[{name:'健康',years:65.2,weight:1},{name:'非卧床功能丧失',years:4.5,weight:.59},{name:'卧床功能丧失',years:1.9,weight:.34}];
 function qrow(r={name:'',years:'',weight:''}){
   const tr=el('tr');
@@ -220,18 +167,13 @@ function updateQaly(){
   updateExportState();
 }
 $('loadq').onclick=loadQaly;$('addrow').onclick=()=>{qrow();updateQaly()};
-function updateI(){
-  try{const ids=['x','x1','v1','x2','v2'],v=ids.map(id=>$(id).value);if(Number(v[2])<0||Number(v[4])<0)throw Error('危险分数不能为负数');put('iresult','r＝'+fmt(SocialMed.interpolate(...v),6));put('isteps',v[2]+'＋('+v[0]+'−'+v[1]+')÷('+v[3]+'−'+v[1]+')×('+v[4]+'−'+v[2]+')');put('ierror','')}
-  catch(e){put('iresult','—');put('isteps','');put('ierror',e.message)}
-}
-['x','x1','v1','x2','v2'].forEach(id=>$(id).addEventListener('input',updateI));
 function updateEq(){
   try{const result=SocialMed.eqState([...$('eqfields').querySelectorAll('select')].map(n=>n.value),$('vas').value);put('eqcode',result.code);put('eqerror','VAS：'+result.vas+' / 100');$('eqerror').style.color='var(--muted)'}catch(e){put('eqcode','—');put('eqerror',e.message);$('eqerror').style.color='var(--red)'}
 }
 ['行动','自我照顾','日常活动','疼痛／不适','焦虑／抑郁'].forEach((name,i)=>{const label=el('label',name),select=el('select');select.setAttribute('aria-label','EQ-5D '+name);for(const v of ['1','2','3']){const o=el('option','等级 '+v);o.value=v;select.append(o)}select.value=[1,1,2,2,3][i];select.onchange=updateEq;label.append(select);$('eqfields').append(label)});$('vas').oninput=updateEq;
 
 function updateExportState(){
-  $('export-record').disabled=currentTab==='whoqol'?!whoResult:currentTab==='hra'?(PersonalHra.view==='personal'?!PersonalHra.ready:!hraResult):currentTab==='qaly'?!qResult:true;
+  $('export-record').disabled=currentTab==='whoqol'?!whoResult:currentTab==='hra'?!HraLesson.ready:currentTab==='qaly'?!qResult:true;
 }
 function saveReflection(){if(reflections[currentTab])reflections[currentTab]={observation:$('reflection-observation').value,action:$('reflection-action').value}}
 function showTab(name){
@@ -239,7 +181,7 @@ function showTab(name){
   document.querySelectorAll('[data-tab]').forEach(n=>{const selected=n.dataset.tab===name;n.setAttribute('aria-selected',String(selected));n.tabIndex=selected?0:-1});
   document.querySelectorAll('.panel').forEach(n=>n.hidden=n.id!==name);$('application').hidden=name==='notes';
   if(reflections[name]){$('reflection-observation').value=reflections[name].observation;$('reflection-action').value=reflections[name].action}
-  const hints={whoqol:'哪些方面的分数值得进一步了解？如果要做健康管理，还需要问清楚哪些生活情况？',hra:PersonalHra.view==='personal'?'结合自己的作息、运动和生活环境，选一件做得到的事。约好时间，再按同一规则看看变化。':'试着只改变一个因素，看看课堂例题的结果。',qaly:'可以记下年数和权重各自怎样影响结果，以及题目中的权重来自哪里。'};
+  const hints={whoqol:'哪些方面的分数值得进一步了解？如果要做健康管理，还需要问清楚哪些生活情况？',hra:'选择一个原始变量，核对转换依据，再比较它怎样影响各死因危险与评价年龄。',qaly:'可以记下年数和权重各自怎样影响结果，以及题目中的权重来自哪里。'};
   put('application-hint',hints[name]||'');put('export-status','');
   if(name!=='notes'){$('tool-qr').src='qr-'+name+'.svg';$('tool-qr').alt=name==='hra'?'危险因素评价工具入口二维码':name==='qaly'?'QALY练习入口二维码':'生命质量评分工具入口二维码';$('tool-link').href=online+'#'+name}
   updateExportState();
@@ -265,13 +207,9 @@ $('reflection-example').onclick=()=>{
     observation='例如，体检没有明显异常，也可能有睡不好、白天容易累的困扰。看具体方面的分数，比只看平均分更容易发现这些情况。';
     action='如果想先改善白天疲劳，可以了解作息、宿舍噪声和课业压力，和本人商量一个做得到的调整，约好时间后用同一版本问卷复评。这里的例子没有实际干预数据。';
   }else if(currentTab==='hra'){
-    if(PersonalHra.view==='personal'){
-      observation='例如，知道运动有益健康，却发现这一周实际没有安排多少活动。除了意愿，还要看看课程安排、场地和是否有人一起。';
-      action='可以先和同伴约几个固定时段，做目前能够坚持的活动。下次记录实际完成量；没有记录的项目不能写成已经改善。';
-    }else{
-      observation=hraResult?'这组例题的总危险由'+fmt(hraResult.before)+'变为'+fmt(hraResult.after)+' /10万。可以再只改一个因素，比较哪一项对结果影响较大。':'评价风险时，还需要了解哪些因素是可以改变的。';
-      action='如果讨论大学生的健康管理，可以先记录作息、运动和饮食，选一个具体目标，再看一段时间内是否做到。教材里这名中年男性的系数不能直接套给大学生。';
-    }
+    const r=HraLesson.result;
+    observation=r?.complete?'本次课堂演算的总危险由'+fmt(r.before)+'变为'+fmt(r.after)+' /10万。各死因的降低量需要除以原总危险，才是表12-1第13列。':'先把原始变量与单项分数区分开，再用组合分数计算各死因危险。';
+    action='可以只改变体力活动，保留其余条件，观察哪些死因的危险值发生变化。比较前先核对转换表的适用人群与系数来源，不能把风险对应年龄当成寿命预测。';
   }else{
     observation=qResult?'这次输入的年数合计为'+fmt(qResult.years)+'年，质量调整后为'+fmt(qResult.qaly,3)+' QALY。改动权重后，可以看到生活状态怎样影响结果。':'评价健康效果时，除了活了多少年，还要考虑这些年的健康状态。';
     action='比较两种方案前，需要核对各自的持续时间和权重来源。若用EQ-5D效用值，应注明版本和价值集，不能把VAS或WHOQOL领域分直接填成效用权重。';
@@ -288,12 +226,7 @@ function recordText(){
     lines.push('','逐题作答');WhoQuestions.items.forEach(q=>{const value=SocialMed.answerValue(raw[q.id]);lines.push(q.id+' '+q.text+'\n'+letter(value)+' '+q.options[value-1])});
     lines.push('','来源：课堂WHOQOL-100评分说明第8页；WHO提供的计分手册第19—22页。','https://www.who.int/tools/whoqol/whoqol-100');
   }else if(currentTab==='hra'){
-    if(PersonalHra.view==='personal')lines.push(PersonalHra.report());
-    else{
-    if(!hraResult)throw Error('先填写有效危险分数');lines.push('41岁男性教材例题 / '+($('roundfirst').checked?'R先保留2位':'使用完整精度R'));
-    hraResult.rows.forEach(r=>lines.push(r.name+'：M='+r.baseline+'；当前R='+fmt(r.before.applied,6)+'，D='+fmt(r.before.d,6)+'；改善后R='+fmt(r.after.applied,6)+'，D='+fmt(r.after.d,6)+'；减少'+fmt(r.delta,6)+'；占原总危险'+fmt(r.contribution,4)+'%'));
-    lines.push('总危险：'+fmt(hraResult.before,6)+'→'+fmt(hraResult.after,6)+' /10万','减少：'+fmt(hraResult.delta,6)+'；下降'+fmt(hraResult.percent,4)+'%','',...hraResult.rows.map(r=>r.name+'\n'+riskSteps(r.before,'当前')+'\n'+riskSteps(r.after,'改善后')),'', $('age-steps').textContent,'来源：《社会医学》第5版表11-1、11-3；课堂补充表12-1、12-2、12-3。历史教学模型，不用于当前个人临床预测。');
-    }
+    lines.push(HraLesson.report(HraLesson.state));
   }else{
     if(!qResult)throw Error('先填写有效QALY数据');lines.push('QALY：Σ（持续年数×权重）',...qResult.parts.map(r=>(r.name||'未命名状态')+'：'+r.years+'×'+r.weight+'='+fmt(r.weighted,6)),'未调整年数：'+fmt(qResult.years,6),'QALY：'+fmt(qResult.qaly,6),'权重采用本次输入值，未进行量表效用换算。','来源：课程课件第139页。');
   }
@@ -304,28 +237,5 @@ function download(text,name,type='text/plain'){
 }
 $('export-record').onclick=()=>{try{download(recordText(),'社会医学_'+currentTab+'_计算与应用记录.txt');put('export-status','已导出计算过程与当前填写的应用记录。')}catch(e){put('export-status',e.message)}};
 $('print-record').onclick=()=>window.print();
-let conversionResult=null;
-CourseData.conversions.forEach((c,i)=>{const option=el('option',c.name+(c.unit?'（'+c.unit+'）':''));option.value=i;$('conversion-kind').append(option)});
-function renderConversion(){
-  const item=CourseData.conversions[Number($('conversion-kind').value)];
-  $('conversion-number-label').hidden=!!item.options;$('conversion-option-label').hidden=!item.options;
-  if(item.options){$('conversion-option').replaceChildren();item.options.forEach(([label],i)=>{const option=el('option',label);option.value=i;$('conversion-option').append(option)})}
-  else $('conversion-number').value=item.example;
-  updateConversion();
-}
-function updateConversion(){
-  const item=CourseData.conversions[Number($('conversion-kind').value)];conversionResult=null;put('conversion-error','');
-  try{
-    conversionResult=SocialMed.convertRisk(item,item.options?$('conversion-option').value:$('conversion-number').value);
-    put('conversion-result','危险分数 r＝'+fmt(conversionResult.score,6));
-    put('conversion-steps',item.options?'表内分类：'+conversionResult.label+' → '+conversionResult.score:
-      conversionResult.low[0]===conversionResult.high[0]?'恰为参照点：'+conversionResult.low[0]+' '+item.unit+' → '+conversionResult.score:
-      '参照点：'+conversionResult.low.join(' → ')+'；'+conversionResult.high.join(' → ')+'\n'+conversionResult.low[1]+'＋('+$('conversion-number').value+'−'+conversionResult.low[0]+')÷('+conversionResult.high[0]+'−'+conversionResult.low[0]+')×('+conversionResult.high[1]+'−'+conversionResult.low[1]+')＝'+fmt(conversionResult.score,6));
-  }catch(e){put('conversion-error',e.message);put('conversion-result','—');put('conversion-steps','')}
-  $('conversion-apply').disabled=!conversionResult;
-}
-$('conversion-kind').value='2';$('conversion-kind').onchange=renderConversion;
-$('conversion-number').oninput=updateConversion;$('conversion-option').onchange=updateConversion;
-$('conversion-apply').onclick=()=>{if(conversionResult){const item=CourseData.conversions[Number($('conversion-kind').value)];causes[0].factors[item.factor].before=conversionResult.score;causeIndex=0;renderFactorEditor();updateHra();put('conversion-steps',$('conversion-steps').textContent+'\n已用于冠心病当前项：'+causes[0].factors[item.factor].name+'。改善后分数保持当前设定。')}};
-PersonalHra.init({download,onChange:()=>{updateExportState();if(currentTab==='hra')put('application-hint',PersonalHra.view==='personal'?'结合自己的生活情况，选一件做得到的事，再按同一规则复评。':'试着只改变一个因素，看看课堂例题的结果。')}});
-renderWhoFields();updateWho();renderFactorEditor();updateHra();loadQaly();updateI();updateEq();renderConversion();showTab(location.hash.slice(1));
+HraLesson.init({download,onChange:updateExportState});
+renderWhoFields();updateWho();loadQaly();updateEq();showTab(location.hash.slice(1));
