@@ -181,7 +181,7 @@ function showTab(name){
   document.querySelectorAll('[data-tab]').forEach(n=>{const selected=n.dataset.tab===name;n.setAttribute('aria-selected',String(selected));n.tabIndex=selected?0:-1});
   document.querySelectorAll('.panel').forEach(n=>n.hidden=n.id!==name);$('application').hidden=name==='notes';
   if(reflections[name]){$('reflection-observation').value=reflections[name].observation;$('reflection-action').value=reflections[name].action}
-  const hints={whoqol:'哪些方面的分数值得进一步了解？如果要做健康管理，还需要问清楚哪些生活情况？',hra:'选择一个原始变量，核对转换依据，再比较它怎样影响各死因危险与评价年龄。',qaly:'可以记下年数和权重各自怎样影响结果，以及题目中的权重来自哪里。'};
+  const hints={whoqol:'哪些方面的分数值得进一步了解？如果要做健康管理，还需要问清楚哪些生活情况？',hra:'试着只改一项，比如体力活动，看看哪些结果跟着变了。',qaly:'可以记下年数和权重各自怎样影响结果，以及题目中的权重来自哪里。'};
   put('application-hint',hints[name]||'');put('export-status','');
   if(name!=='notes'){$('tool-qr').src='qr-'+name+'.svg';$('tool-qr').alt=name==='hra'?'危险因素评价工具入口二维码':name==='qaly'?'QALY练习入口二维码':'生命质量评分工具入口二维码';$('tool-link').href=online+'#'+name}
   updateExportState();
@@ -208,8 +208,8 @@ $('reflection-example').onclick=()=>{
     action='如果想先改善白天疲劳，可以了解作息、宿舍噪声和课业压力，和本人商量一个做得到的调整，约好时间后用同一版本问卷复评。这里的例子没有实际干预数据。';
   }else if(currentTab==='hra'){
     const r=HraLesson.result;
-    observation=r?.complete?'本次课堂演算的总危险由'+fmt(r.before)+'变为'+fmt(r.after)+' /10万。各死因的降低量需要除以原总危险，才是表12-1第13列。':'先把原始变量与单项分数区分开，再用组合分数计算各死因危险。';
-    action='可以只改变体力活动，保留其余条件，观察哪些死因的危险值发生变化。比较前先核对转换表的适用人群与系数来源，不能把风险对应年龄当成寿命预测。';
+    observation=r?.complete?'这次计算的总危险由'+fmt(r.before)+'变为'+fmt(r.after)+' /10万。对照各项结果，可以看看哪些改变的影响较大。':'先载入课堂例题，试着改一项数值，看看它会影响哪些结果。';
+    action='我可以先只改体力活动，再分别调整其他因素，比较每次的差别。';
   }else{
     observation=qResult?'这次输入的年数合计为'+fmt(qResult.years)+'年，质量调整后为'+fmt(qResult.qaly,3)+' QALY。改动权重后，可以看到生活状态怎样影响结果。':'评价健康效果时，除了活了多少年，还要考虑这些年的健康状态。';
     action='比较两种方案前，需要核对各自的持续时间和权重来源。若用EQ-5D效用值，应注明版本和价值集，不能把VAS或WHOQOL领域分直接填成效用权重。';
