@@ -192,7 +192,7 @@
   const $=id=>document.getElementById(id),el=(tag,text='',cls='')=>{const node=document.createElement(tag);node.textContent=text;if(cls)node.className=cls;return node};
   const policyLabel=s=>s.policy==='given'?'沿用表12-1给定分数':'冠心病按表12-2内插';
   function changeBadge(change){const badge=el('span','','lesson-change '+change.direction);badge.setAttribute('aria-label',change.description);badge.title=change.description;const arrow=el('span',change.arrow,'lesson-change-arrow');arrow.setAttribute('aria-hidden','true');badge.append(arrow,el('span',change.label));return badge}
-  function changed(){if(state.mode==='课堂表12-1算例')state.mode='修改后的课堂算例';$('lesson-status').textContent='已修改，离开前记得保存。'}
+  function changed(){if(state.mode==='课堂表12-1算例')state.mode='修改后的课堂算例';$('lesson-status').textContent='已修改。离开前请下载保存文件，下次导入后继续填写。'}
   const sameValue=(id,a,b)=>!byId[id]?.options&&has(a)&&has(b)&&Number.isFinite(Number(a))&&Number.isFinite(Number(b))?Number(a)===Number(b):a===b;
   function clearAffected(previous,next,id){
     for(let ci=0;ci<bindings.length;ci++)for(let fi=0;fi<bindings[ci].length;fi++){
@@ -347,7 +347,7 @@
   }
 
   function hasWork(){return Object.values(state.before).some(has)||Object.values(state.after).some(has)||Object.keys(state.overrides).length>0||Object.keys(state.drafts||{}).length>0}
-  function replaceAllowed(){return !hasWork()||root.confirm('当前课堂资料将被替换。需要保留的话请先保存，继续吗？')}
+  function replaceAllowed(){return !hasWork()||root.confirm('当前课堂资料将被替换。需要保留的话请先下载保存文件，继续吗？')}
   function init(options={}){
     document=root.document;notify=options.onChange||(()=>{});save=options.download||((text,name,type='text/plain')=>{const url=URL.createObjectURL(new Blob(['\ufeff'+text],{type:type+';charset=utf-8'})),a=el('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500)});
     ageRows.forEach(([risk,base])=>{const row=el('tr');row.dataset.risk=String(risk);row.dataset.base=String(base);row.append(el('td',String(risk)),el('td',String(base+1)));$('lesson-age-rows').append(row)});
@@ -358,8 +358,8 @@
     $('lesson-clear').onclick=()=>{if(!replaceAllowed())return;state=blank();renderFields();render();$('lesson-status').textContent='已清空变量。当前值未知就留空，改善后留空表示保持当前。'};
     $('lesson-unchanged').onclick=()=>{state.after=clean();Object.values(state.overrides).forEach(o=>o.after='');for(const [key,draft]of Object.entries(state.drafts||{})){draft.after='';if(!has(draft.before))delete state.drafts[key]}changed();renderFields();render();$('lesson-status').textContent='已将改善后设为保持当前，当前填写的资料没有改动。'};
     $('lesson-four').onclick=()=>{for(const [id,value]of Object.entries({activity:'regular',weightBasis:'average',depression:'treated',proctoscopy:'annual'}))state=setVariable(state,'after',id,value);changed();renderFields();render();$('lesson-status').textContent='已填入课件第174页的4项改变，结果已更新。'};
-    $('lesson-save').onclick=()=>{const s=validate(state);save(JSON.stringify(s,null,2),'健康危险因素评价_课堂资料.json','application/json');$('lesson-status').textContent=Object.keys(s.drafts).length?'填写内容和未应用的系数草稿已保存，下次可以导入接着填。':'填写内容已保存，下次可以导入接着填。'};
-    $('lesson-import').onchange=async()=>{const input=$('lesson-import'),file=input.files?.[0];if(!file)return;try{if(file.size>150000)throw Error('请选择小于150KB的单份课堂资料');const next=validate(JSON.parse((await file.text()).replace(/^\uFEFF/,'')));if(!replaceAllowed())return;state=next;renderFields();render();$('lesson-status').textContent='已恢复课堂资料。'}catch(e){$('lesson-status').textContent='没有导入，原资料保留。'+(e instanceof SyntaxError?'文件不是有效JSON。':e.message)}finally{input.value=''}};
+    $('lesson-save').onclick=()=>{const s=validate(state);save(JSON.stringify(s,null,2),'健康危险因素评价_课堂资料.json','application/json');$('lesson-status').textContent=Object.keys(s.drafts).length?'填写内容和未应用的系数草稿都在下载的JSON文件中。请保管好文件，下次点击“导入已存资料”恢复。':'请保管下载的JSON文件，下次点击“导入已存资料”恢复。刷新页面不会自动续填。'};
+    $('lesson-import').onchange=async()=>{const input=$('lesson-import'),file=input.files?.[0];if(!file)return;try{if(file.size>150000)throw Error('请选择小于150KB的单份课堂资料');const next=validate(JSON.parse((await file.text()).replace(/^\uFEFF/,'')));if(!replaceAllowed())return;state=next;renderFields();render();$('lesson-status').textContent='已从文件恢复课堂资料。'}catch(e){$('lesson-status').textContent='没有导入，原资料保留。'+(e instanceof SyntaxError?'文件不是有效JSON。':e.message)}finally{input.value=''}};
     $('lesson-csv').onclick=()=>{try{save(csv(state),'健康危险因素评价_表12-1完整结果.csv','text/csv');$('lesson-status').textContent='已导出表12-1的13列、分数依据、合计及查表年龄。'}catch(e){$('lesson-status').textContent=e.message}};
     $('lesson-print').textContent='打印预览 / 保存PDF';$('lesson-print').onclick=openPrintPreview;root.addEventListener('beforeprint',()=>{if($('lesson-print-preview')&&!$('lesson-print-preview').hidden)document.body.classList.add('printing-lesson')});root.addEventListener('afterprint',()=>document.body.classList.remove('printing-lesson'));
     $('lesson-view').onclick=()=>{$('lesson-results-title').focus();$('lesson-results-title').scrollIntoView({block:'start'})};
