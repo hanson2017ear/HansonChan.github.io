@@ -139,3 +139,20 @@ WHOQOL默认是空白问卷。“课堂示例与空白CSV”内可以另行查�
 运行 `node hra-lesson-test.cjs` 核对课堂三表计算。测试包含全部12项死因的33项因素、两种转换口径、单位及血压选择、改善设定、各年龄列、缺失参数不赋分、手工分数来源、JSON和13列CSV。浏览器另行核对填写与结果更新、导出和手机显示。
 
 课程学习工具，非WHO或EuroQol官方软件。使用其他版本量表时，应重新核对条目代码及该版本规则。
+
+## 外部文献数值与来源（2026-10-25）
+
+在“查看分数和取值依据”中，家族自杀史、肠息肉、肠炎、直肠出血、肺气肿及结核X线等相关因素旁，新增可展开的原始研究数值、人群、结局、95%置信区间和原网址。共7篇量化研究、12项效应值，另有1份早期HRA编码资料。
+
+这些OR、HR、aHR、PPV尚未证实是本课堂模型的标准化r，不自动写入系数，不参与总危险和年龄计算。原来可计算的课堂算例及其来源保持不变。完整标准化转换表仍待取得；用其他研究系数替换时，必须连同参照人群、基准表和转换方法一起核对。
+
+- [Qin P, Agerbo E, Mortensen PB. Lancet. 2002;360:1126–1130.](https://pubmed.ncbi.nlm.nih.gov/12387960/)
+- [Tidemalm D, et al. Psychological Medicine. 2011;41:2527–2534.](https://pubmed.ncbi.nlm.nih.gov/21733212/)
+- [Olén O, et al. Lancet. 2020;395:123–131.](https://pubmed.ncbi.nlm.nih.gov/31929014/)
+- [He X, et al. Gastroenterology. 2020;158:852–861.e4.](https://pubmed.ncbi.nlm.nih.gov/31302144/)
+- [Risk in primary care of colorectal cancer from new onset rectal bleeding: 10 year prospective study. BMJ. 2006;333:69–70.](https://pmc.ncbi.nlm.nih.gov/articles/PMC1489264/)
+- [Çolak Y, et al. Lancet Respiratory Medicine. 2017;5:426–434.](https://pubmed.ncbi.nlm.nih.gov/28389225/)
+- [Association of inactive pulmonary tuberculosis lesions with the risk of active disease development in the elderly: a population-based retrospective study. ERJ Open Research. 2025.](https://pmc.ncbi.nlm.nih.gov/articles/PMC12278313/)
+- [Brown RL, Brown KS. Toward Computerized Underwriting—A Biological Age Model. Transactions of Society of Actuaries. 1983;35:393–416. 附录第410页。](https://www.soa.org/globalassets/assets/library/research/transactions-of-society-of-actuaries/1983/january/tsa83v3514.pdf)
+
+方法学核对：[Kim等（2011）HRA原始研究](https://jkms.org/pdf/10.3346/jkms.2011.26.2.159)明确展示文献RR与标准化r的区别。

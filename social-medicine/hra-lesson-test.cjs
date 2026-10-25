@@ -1,6 +1,16 @@
 const assert=require('node:assert/strict'),h=require('./hra-lesson.js');
 const near=(a,b)=>assert.ok(Math.abs(a-b)<1e-8,`${a} != ${b}`);
 const copy=x=>JSON.parse(JSON.stringify(x));
+// A cited OR/HR/PPV remains a reference result until a matching classroom r exists.
+assert.ok(h.evidenceFor(2,'suicideFamily').some(x=>x.estimates.some(e=>e.metric==='OR'&&e.value===2.58)));
+assert.ok(h.evidenceFor(8,'colitis').some(x=>x.estimates.some(e=>e.metric==='HR'&&e.value===1.59)));
+assert.ok(h.evidenceFor(8,'bleeding').some(x=>x.estimates.some(e=>e.metric==='PPV'&&e.value===5.7)));
+assert.ok(h.evidenceFor(10,'xray').some(x=>x.estimates.some(e=>e.metric==='aHR'&&e.value===6)));
+assert.equal(h.evidenceFor(0,'smoke').length,0);
+assert.equal(new Set(h.literature.map(x=>x.key)).size,h.literature.length);
+for(const item of h.literature){assert.equal(item.compatible,false);assert.match(item.url,/^https:\/\//);assert.ok(item.population&&item.outcome&&item.condition&&item.reason);for(const e of item.estimates){assert.ok(e.low<=e.value&&e.value<=e.high);assert.ok(['OR','HR','aHR','PPV'].includes(e.metric))}}
+for(const [id,cause]of [['suicideFamily',2],['colitis',8],['bleeding',8],['emphysema',7],['polyps',8]]){const s=h.example();s.before[id]='yes';assert.equal(h.analyse(s).rows[cause].before,null)}
+const positiveCxr=h.example();positiveCxr.before.xray='positive';assert.equal(h.analyse(positiveCxr).rows[10].before,null);
 // The textbook gives lung cancer r=1.9 only for this precise smoking condition.
 const smoking20=h.example();smoking20.before.smoke='twenty';const rs20=h.analyse(smoking20);
 near(rs20.rows[0].factors[5].before,1.5);near(rs20.rows[5].before.applied,1.9);near(rs20.rows[5].before.d,383.8);
