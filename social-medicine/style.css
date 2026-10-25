@@ -62,12 +62,13 @@ nav{display:flex;border-bottom:1px solid var(--line);gap:28px;margin:8px 0 32px;
 .lesson-change{display:inline-flex;align-items:center;gap:4px;color:var(--green);font-size:14px;font-weight:600;line-height:1.4;white-space:nowrap;font-variant-numeric:tabular-nums}
 .lesson-change-arrow{font-size:19px;line-height:1;font-weight:500}
 .lesson-change.down{color:var(--green)}.lesson-change.up{color:var(--red)}.lesson-change.flat{color:var(--muted);font-size:12px;font-weight:400}
-.lesson-bar-row{grid-template-columns:82px minmax(48px,1fr) 108px;column-gap:10px;min-height:48px;padding:9px 0}
+.lesson-bar-row{grid-template-columns:82px minmax(48px,1fr) 108px;column-gap:10px;min-height:46px;padding:3px 0}
 .lesson-bar-label{font-size:12px;line-height:1.5}.lesson-bar-stats{grid-column:3;grid-row:1/3;align-self:center;text-align:right}
 .lesson-bar-stats small{display:block;font-size:10.5px;line-height:1.5;margin-top:3px;white-space:nowrap;color:var(--muted)}
 .lesson-total-change>.lesson-change{display:flex;min-height:51px;font:32px/1.6 Georgia,"Microsoft YaHei",serif;font-variant-numeric:tabular-nums}
 .lesson-total-change>.lesson-change span{font:inherit;color:inherit}.lesson-total-change>.lesson-change .lesson-change-arrow{font:30px/1 "Microsoft YaHei",sans-serif;margin-right:2px}
 .lesson-total-change>.lesson-change.flat{font-size:25px}
+#lesson-error:empty{display:none}.lesson-results .metric-band{margin:18px 0;padding:16px 0 18px}
 @media(max-width:1050px){.lesson-bar-row{grid-template-columns:120px minmax(60px,1fr) 130px}.lesson-bar-stats small{font-size:12px}}
 @media(max-width:580px){.lesson-bar-row{grid-template-columns:85px minmax(40px,1fr) 108px;column-gap:9px}.lesson-bar-stats small{font-size:10.5px}.lesson-total-change>.lesson-change{font-size:27px;min-height:43px}.lesson-total-change>.lesson-change .lesson-change-arrow{font-size:26px}.lesson-bar-label{font-size:12px}}
 @media print{.lesson-bar-row{grid-template-columns:100px 1fr 120px;min-height:34px;padding:4px 0}.lesson-bar-label,.lesson-bar-stats small{font-size:8pt}.lesson-change{font-size:10pt}.lesson-total-change>.lesson-change{font-size:18pt;min-height:0}.lesson-total-change>.lesson-change .lesson-change-arrow{font-size:18pt}}
