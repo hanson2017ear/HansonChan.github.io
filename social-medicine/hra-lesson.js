@@ -41,7 +41,7 @@
     ['alcohol','emphysema','smoke'],['polyps','bleeding','colitis','proctoscopy'],['sbp','weightBasis'],['xray','tb'],['social']
   ];
   const clean=()=>Object.fromEntries(fields.map(f=>[f.id,'']));
-  function blank(){return{kind:'social-medicine-classroom-hra',version:1,age:'41',sex:'male',bpUnit:'mmHg',bpIndicator:'sbp',policy:'table',roundFirst:true,mode:'自行填写的课堂练习',before:clean(),after:clean(),overrides:{}}}
+  function blank(){return{kind:'social-medicine-classroom-hra',version:1,age:'41',sex:'male',bpUnit:'mmHg',bpIndicator:'sbp',policy:'table',roundFirst:true,mode:'自行填写的课堂练习',before:clean(),after:clean(),overrides:{},drafts:{}}}
   function example(){const s=blank();s.policy='given';s.mode='课堂表12-1算例';Object.assign(s.before,{sbp:'120',dbp:'70',cholesterol:'192',diabetes:'none',activity:'sedentary',chdFamily:'none',smoke:'never',weightBasis:'percent',excess:'30',alcohol:'none',mileage:'25000',seatbelt:'90',depression:'frequent',suicideFamily:'none',murmur:'none',rheumatic:'none',symptoms:'none',emphysema:'none',polyps:'none',bleeding:'none',colitis:'none',proctoscopy:'none',xray:'negative',tb:'none',social:'middle'});Object.assign(s.after,{activity:'regular',weightBasis:'average',depression:'treated',proctoscopy:'annual',seatbelt:'100'});return s}
   const has=v=>v!==''&&v!==null&&v!==undefined;
   const fmt=(v,p=2)=>Number(v).toLocaleString('zh-CN',{maximumFractionDigits:p,useGrouping:false});
@@ -57,7 +57,7 @@
       for(const id of Object.keys(values))if(!byId[id])throw Error('不认识的变量：'+id);
       for(const f of fields){const x=values[f.id];if(!has(x))continue;if(!['string','number'].includes(typeof x))throw Error(f.label+'格式不正确');const v=String(x).trim();if(!v)continue;
         if(f.options){if(!f.options.some(o=>o[0]===v))throw Error(f.label+'的选项不正确')}
-        else if(!Number.isFinite(Number(v))||Number(v)<f.min||Number(v)>f.max)throw Error(f.label+'请填'+f.min+'—'+f.max+'之间的数值');s[phase][f.id]=v;
+        else if(!Number.isFinite(Number(v))||Number(v)<f.min||Number(v)>f.max)throw Error(f.label+'请填'+f.min+'—'+f.max+'之间的数值');s[phase][f.id]=f.options?v:String(Number(v));
       }
     }
     for(const v of [s.before,effective(s,'after')])if(has(v.sbp)&&has(v.dbp)&&Number(v.dbp)>=Number(v.sbp))throw Error('舒张压应小于收缩压，请核对高压、低压是否填反。');
@@ -68,7 +68,19 @@
       const entry={before:'',after:'',source:''};for(const phase of ['before','after'])if(has(value[phase])){if(!['string','number'].includes(typeof value[phase])||!Number.isFinite(Number(value[phase]))||Number(value[phase])<0||Number(value[phase])>1000000)throw Error('危险分数须为0—1000000的有效数值');entry[phase]=String(value[phase])}
       if(has(value.source)&&(typeof value.source!=='string'||value.source.length>500))throw Error('补充分数来源请控制在500字以内');entry.source=value.source||'';s.overrides[key]=entry;
     }
+    if(raw.drafts!==undefined){
+      if(!raw.drafts||typeof raw.drafts!=='object'||Array.isArray(raw.drafts))throw Error('系数草稿格式不正确');
+      for(const [key,value]of Object.entries(raw.drafts)){
+        const match=key.match(/^(\d+)-(\d+)$/);if(!match||!bindings[+match[1]]?.[+match[2]])throw Error('不认识的草稿项目：'+key);
+        if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).some(k=>!['before','after','source'].includes(k)))throw Error('系数草稿格式不正确');
+        const draft={before:'',after:'',source:''};for(const part of ['before','after','source']){const v=value[part]??'';if(typeof v!=='string'||v.length>(part==='source'?500:64))throw Error('系数草稿内容过长或格式不正确');draft[part]=v}s.drafts[key]=draft;
+      }
+    }
     return s;
+  }
+  function applyCoefficient(raw,key,entry){
+    if((has(entry.before)||has(entry.after))&&!String(entry.source||'').trim())throw Error('请先填写这项系数的来源，原结果已保留。');
+    const next={...raw,overrides:{...raw.overrides,[key]:entry},drafts:{...raw.drafts}};delete next.drafts[key];return validate(next);
   }
   const effective=(s,phase)=>phase==='before'?s.before:Object.fromEntries(fields.map(f=>[f.id,has(s.after[f.id])?s.after[f.id]:s.before[f.id]]));
   const textValue=(f,value)=>!has(value)?'未填':f.options?f.options.find(o=>o[0]===value)?.[1]||value:String(value)+(f.unit?' '+f.unit:'');
@@ -141,13 +153,14 @@
       const b=applicable&&factors.every(f=>f.before!==null)?calc.risk(factors.map(f=>f.before),c.baseline,s.roundFirst):null,a=applicable&&factors.every(f=>f.after!==null)?calc.risk(factors.map(f=>f.after),c.baseline,s.roundFirst):null;
       return{...c,factors,before:b,after:a,delta:b&&a?b.d-a.d:null};
     });
-    const complete=applicable&&rows.every(r=>r.before&&r.after),b=complete?rows.reduce((sum,r)=>sum+r.before.d,0):null,a=complete?rows.reduce((sum,r)=>sum+r.after.d,0):null;
-    rows.forEach(r=>r.contribution=complete&&b>0&&r.delta!==null?r.delta/b*100:null);
-    const beforeAge=complete?ageLookup(b,s.age):null,afterAge=complete?ageLookup(a,s.age):null;
-    return{state:s,rows,pending,applicable,complete,before:b,after:a,delta:complete?b-a:null,percent:complete&&b>0?(b-a)/b*100:null,beforeAge,afterAge,finished:rows.filter(r=>r.before&&r.after).length};
+    const beforeComplete=applicable&&rows.every(r=>r.before),afterComplete=applicable&&rows.every(r=>r.after),complete=beforeComplete&&afterComplete;
+    const b=beforeComplete?rows.reduce((sum,r)=>sum+r.before.d,0):null,a=afterComplete?rows.reduce((sum,r)=>sum+r.after.d,0):null;
+    rows.forEach(r=>r.contribution=beforeComplete&&b>0&&r.delta!==null?r.delta/b*100:null);
+    const beforeAge=beforeComplete?ageLookup(b,s.age):null,afterAge=afterComplete?ageLookup(a,s.age):null;
+    return{state:s,rows,pending,applicable,beforeComplete,afterComplete,complete,before:b,after:a,delta:complete?b-a:null,percent:complete&&b>0?(b-a)/b*100:null,beforeAge,afterAge,finished:rows.filter(r=>r.before&&r.after).length};
   }
   function csv(raw){
-    const r=analyse(raw);if(!r.complete)throw Error('请补齐变量和必要系数，并核对男性40—44岁参数适用条件。');
+    const r=analyse(raw);if(Object.keys(r.state.drafts).length)throw Error('还有系数草稿未应用，请先应用或放弃草稿。');if(!r.complete)throw Error('请补齐变量和必要系数，并核对男性40—44岁参数适用条件。');
     const quote=v=>{let text=typeof v==='number'?String(Number(v.toPrecision(14))):String(v??'');if(typeof v==='string'&&/^[=+\-@\t\r]/.test(text))text="'"+text;return '"'+text.replace(/"/g,'""')+'"'};
     const data=[['(1)死亡原因','(2)死亡概率/10万','(3)疾病诱发因素','(4)指标值','(5)危险分数','(6)组合危险分数','(7)存在死亡危险/10万','(8)改变危险因素','(9)新危险分数','(10)新组合危险分数','(11)新存在死亡危险/10万','(12)降低量/10万','(13)占原总危险百分比','当前分数来源','改善后分数来源','计算口径','资料标记']];
     for(const row of r.rows)row.factors.forEach((f,i)=>data.push([i===0?row.name:'',i===0?row.baseline:'',f.name,f.beforeValue,f.before,i===0?row.before.applied:'',i===0?row.before.d:'',f.afterChange,f.after,i===0?row.after.applied:'',i===0?row.after.d:'',i===0?row.delta:'',i===0?row.contribution:'',f.beforeNote,f.afterNote,r.state.policy==='given'?'优先采用表12-1给定值':'冠心病按表12-2内插',r.state.mode]));
@@ -156,24 +169,45 @@
     return data.map(row=>[...row,...Array(Math.max(0,data[0].length-row.length)).fill('')].map(quote).join(',')).join('\r\n');
   }
   function report(raw){
-    const r=analyse(raw);if(!r.complete)throw Error('表12-1尚未全部算完，请核对待补项目。');
+    const r=analyse(raw);if(Object.keys(r.state.drafts).length)throw Error('还有系数草稿未应用，请先应用或放弃草稿。');if(!r.complete)throw Error('表12-1尚未全部算完，请核对待补项目。');
     const lines=['健康危险因素评价 · 课堂表12-1至12-3','资料标记：'+r.state.mode,'参数组：男性40—44岁；实际年龄：'+r.state.age,'计算口径：'+(r.state.policy==='given'?'优先采用表12-1给定值':'冠心病按表12-2内插')+'；'+(r.state.roundFirst?'R先保留2位':'R使用完整精度'),''];
     r.rows.forEach(row=>{lines.push(row.name+'（基准率'+row.baseline+'/10万）');row.factors.forEach(f=>lines.push(f.name+'：'+f.beforeValue+' → r='+f.before+'；改善后'+f.afterValue+' → r='+f.after+'\n依据：'+f.beforeNote+'；'+f.afterNote));
       for(const [title,value]of [['当前',row.before],['改善后',row.after]])lines.push(title+'：X='+fmt(value.x,6)+'；Y='+fmt(value.y,6)+'；R='+fmt(value.r,6)+'；采用R='+fmt(value.applied,6)+'；D='+value.m+'×'+fmt(value.applied,6)+'='+fmt(value.d,6)+' /10万');lines.push('降低量：'+fmt(row.delta,6)+'；占原总危险：'+fmt(row.contribution,6)+'%','');
     });
-    lines.push('总危险：'+fmt(r.before,6)+' → '+fmt(r.after,6)+' /10万','降低量：'+fmt(r.delta,6)+'；总危险下降：'+(r.percent===null?'未定义（原总危险为0）':fmt(r.percent,6)+'%'),'实际年龄：'+r.state.age+'；评价年龄：'+(r.beforeAge?fmt(r.beforeAge.age,6):'超出表内区段')+'；增长年龄：'+(r.afterAge?fmt(r.afterAge.age,6):'超出表内区段'),'评价年龄与增长年龄是风险对应年龄，不是预计寿命或延寿年数。','来源：'+source,'课堂历史参数演算，不作为现实诊断、死亡概率预测或筛查安排。');return lines.join('\n');
+    lines.push('总危险：'+fmt(r.before,6)+' → '+fmt(r.after,6)+' /10万','降低量：'+fmt(r.delta,6)+'；总危险变化：'+riskChange(r.before,r.after).description,'实际年龄：'+r.state.age+'；评价年龄：'+(r.beforeAge?fmt(r.beforeAge.age,6):'超出表内区段')+'；增长年龄：'+(r.afterAge?fmt(r.afterAge.age,6):'超出表内区段'),'评价年龄与增长年龄是风险对应年龄，不是预计寿命或延寿年数。','来源：'+source,'课堂历史参数演算，不作为现实诊断、死亡概率预测或筛查安排。');return lines.join('\n');
   }
   let state=blank(),result=null,document,notify=()=>{},save;
   const $=id=>document.getElementById(id),el=(tag,text='',cls='')=>{const node=document.createElement(tag);node.textContent=text;if(cls)node.className=cls;return node};
   const policyLabel=s=>s.policy==='given'?'沿用表12-1给定分数':'冠心病按表12-2内插';
   function changeBadge(change){const badge=el('span','','lesson-change '+change.direction);badge.setAttribute('aria-label',change.description);badge.title=change.description;const arrow=el('span',change.arrow,'lesson-change-arrow');arrow.setAttribute('aria-hidden','true');badge.append(arrow,el('span',change.label));return badge}
   function changed(){if(state.mode==='课堂表12-1算例')state.mode='修改后的课堂算例';$('lesson-status').textContent='已修改，离开前记得保存。'}
-  function clearAffected(id){for(let ci=0;ci<bindings.length;ci++)for(let fi=0;fi<bindings[ci].length;fi++)if(deps(state,bindings[ci][fi]).includes(id))delete state.overrides[ci+'-'+fi]}
+  const sameValue=(id,a,b)=>!byId[id]?.options&&has(a)&&has(b)&&Number.isFinite(Number(a))&&Number.isFinite(Number(b))?Number(a)===Number(b):a===b;
+  function clearAffected(previous,next,id){
+    for(let ci=0;ci<bindings.length;ci++)for(let fi=0;fi<bindings[ci].length;fi++){
+      const factorId=bindings[ci][fi];if(!deps(next,factorId).includes(id))continue;
+      const key=ci+'-'+fi;
+      for(const store of ['overrides','drafts']){
+        const entry=previous[store]?.[key];if(!entry)continue;const updated={...entry};
+        for(const phase of ['before','after']){
+          const oldValues=effective(previous,phase),newValues=effective(next,phase);
+          const keys=factorId==='weightBasis'&&oldValues.weightBasis!=='percent'&&newValues.weightBasis!=='percent'?['weightBasis']:deps(next,factorId);
+          if(keys.some(k=>!sameValue(k,oldValues[k],newValues[k])))updated[phase]='';
+        }
+        if(has(updated.before)||has(updated.after))next[store][key]=updated;else delete next[store][key];
+      }
+    }
+  }
+  function setVariable(s,phase,id,value){
+    if(!['before','after'].includes(phase)||!byId[id])throw Error('不认识的填写项目');
+    if(sameValue(id,s[phase][id],value))return s;
+    const next={...s,[phase]:{...s[phase],[id]:value},overrides:{...s.overrides},drafts:{...s.drafts}};
+    clearAffected(s,next,id);return next;
+  }
   function inputField(f,phase){
     const input=el(f.options?'select':'input');input.id='lesson-'+phase+'-'+f.id;input.setAttribute('aria-label',(phase==='before'?'当前 ':'改善后 ')+f.label);
     if(f.options){const empty=el('option',phase==='after'?'保持当前':'请选择 / 暂不填');empty.value='';input.append(empty);f.options.forEach(([value,label])=>{const option=el('option',label);option.value=value;input.append(option)})}
     else{input.type='number';input.min=f.min;input.max=f.max;input.step='any';input.inputMode='decimal';if(phase==='after')input.placeholder='留空＝保持当前'}
-    input.value=state[phase][f.id];input.addEventListener('input',()=>{state[phase][f.id]=input.value;clearAffected(f.id);changed();render()});return input;
+    input.value=state[phase][f.id];input.addEventListener('input',()=>{state=setVariable(state,phase,f.id,input.value);changed();render()});return input;
   }
   function renderFields(){
     $('lesson-fields').replaceChildren();groups.forEach(([name,ids],i)=>{
@@ -184,17 +218,44 @@
     for(const id of ['age','sex','bpUnit','bpIndicator','policy'])$('lesson-'+id).value=state[id];$('lesson-round').checked=state.roundFirst;
   }
   function numberCell(value){return value===null||value===undefined?'—':fmt(value,6)}
+  function syncActions(){
+    const draftCount=Object.keys(state.drafts||{}).length,ready=!!result?.complete&&!draftCount;
+    for(const id of ['lesson-csv','lesson-print']){$(id).disabled=!ready;$(id).title=draftCount?'请先应用或放弃系数草稿':''}
+    $('lesson-save').disabled=!result;notify();
+  }
+  function focusPending(p){
+    const id=bindings[p.cause][p.factor],isEmpty=/未填/.test(p.note);
+    if(isEmpty){
+      let targetId=id==='sbp'?state.bpIndicator:id;
+      if(id==='weightBasis'&&state.before.weightBasis==='percent')targetId='excess';
+      const phase=has(state.before[targetId])?p.phase:'before',target=$('lesson-'+phase+'-'+targetId);
+      if(target){target.scrollIntoView({block:'center'});target.focus();return}
+    }
+    $('lesson-conversion').open=true;
+    const cause=$('lesson-factor-details').querySelector('[data-cause="'+p.cause+'"]');cause.open=true;
+    const manual=cause.querySelector('[data-factor="'+p.cause+'-'+p.factor+'"]');manual.open=true;
+    manual.scrollIntoView({block:'center'});manual.querySelector('[data-phase="'+p.phase+'"]').focus({preventScroll:true});
+  }
   function render(){
     result=null;for(const id of ['lesson-metrics','lesson-summary-rows','lesson-full-rows','lesson-ages','lesson-pending','lesson-risk-chart'])$(id).replaceChildren();$('lesson-error').textContent='';
     try{result=analyse(state)}catch(e){$('lesson-error').textContent=e.message}
-    const r=result,complete=!!r?.complete;$('lesson-csv').disabled=!complete;$('lesson-print').disabled=!complete;$('lesson-save').disabled=!r;
+    const r=result,complete=!!r?.complete;
     const modeName={'课堂表12-1算例':'课堂例题','修改后的课堂算例':'已修改的课堂例题','自行填写的课堂练习':'自行填写'}[state.mode]||state.mode;
     $('lesson-mode').textContent=r?modeName+'；'+policyLabel(state)+'，'+(state.roundFirst?'组合分数保留2位小数。':'组合分数不提前取整。'):'';
-    if(!r){$('lesson-progress').textContent='输入有误，旧结果已清除。';$('lesson-age-note').textContent='';$('lesson-factor-details').replaceChildren();for(const row of $('lesson-age-rows').children)row.classList.remove('current','after');notify();return}
-    $('lesson-progress').textContent='已完成 '+r.finished+' / 12 项计算。'+(complete?'完整表格和年龄结果见下方。':'资料齐全后显示合计。');
+    if(!r){$('lesson-progress').textContent='请先修正上面的输入。已填资料和系数草稿仍保留。';$('lesson-age-note').textContent='';$('lesson-factor-details').replaceChildren();for(const row of $('lesson-age-rows').children)row.classList.remove('current','after');syncActions();return}
+    const currentCount=r.rows.filter(row=>row.before).length,afterCount=r.rows.filter(row=>row.after).length,draftCount=Object.keys(state.drafts||{}).length;
+    $('lesson-progress').textContent='当前已完成 '+currentCount+' / 12 项；改善后已完成 '+afterCount+' / 12 项。'+(draftCount?'还有'+draftCount+'项系数草稿未应用。':complete?'可以导出完整表格。':'两边分别计算，已完成的结果会保留。');
     if(!r.applicable)$('lesson-pending').append(el('p','这组参数适用于男性40—44岁。其他人群需要对应的基准率和转换表。','lesson-waiting'));
-    if(r.pending.length){const unique=[...new Set(r.pending.map(p=>p.label))];$('lesson-pending').append(el('p',unique.length<=4?'待补：'+unique.join('、')+'。':'还有'+unique.length+'项资料或系数未齐。','help'));const jump=el('button','查看需要补充的项目');jump.type='button';jump.onclick=()=>{$('lesson-conversion').open=true;$('lesson-conversion').scrollIntoView({block:'start'})};$('lesson-pending').append(jump)}
-    if(complete){for(const [label,value]of [['当前总危险',r.before],['改善后总危险',r.after],['减少量',r.delta]]){const card=el('div','','metric');card.append(el('span',label),el('strong',fmt(value,2)),el('small','/10万'));$('lesson-metrics').append(card)}const card=el('div','','metric lesson-total-change'),change=riskChange(r.before,r.after);card.append(el('span','总危险变化'),changeBadge(change),el('small',change.percent===null?change.description:'与当前总危险相比'));$('lesson-metrics').append(card)}
+    if(r.pending.length){
+      const entries=new Map();for(const p of r.pending){const key=p.cause+'-'+p.factor;if(!entries.has(key))entries.set(key,{...p,phases:[]});entries.get(key).phases.push(p.phase==='before'?'当前':'改善后')}
+      const list=el('details','','lesson-pending-list');list.open=entries.size<=4;list.append(el('summary','还有'+entries.size+'项需要补充'));
+      for(const p of entries.values()){const row=el('div','','lesson-pending-item');row.append(el('span',p.label+'（'+p.phases.join('、')+'）'));const button=el('button',/未填/.test(p.note)?'去填写':'补充系数');button.type='button';button.setAttribute('aria-label',p.label+' '+button.textContent);button.onclick=()=>focusPending(p);row.append(button);list.append(row)}$('lesson-pending').append(list);
+    }
+    if(r.beforeComplete||r.afterComplete){
+      const changeLabel=r.delta!==null&&r.delta<0?'增加量':'减少量';
+      for(const [label,value]of [['当前总危险',r.before],['改善后总危险',r.after],[changeLabel,r.delta===null?null:Math.abs(r.delta)]]){const card=el('div','','metric');card.append(el('span',label),el('strong',value===null?'待补资料':fmt(value,2)),el('small',value===null?'补齐对应阶段后显示':'/10万'));$('lesson-metrics').append(card)}
+      const card=el('div','','metric lesson-total-change'),change=complete?riskChange(r.before,r.after):null;card.append(el('span','总危险变化'),change?changeBadge(change):el('strong','待补资料'),el('small',change?(change.percent===null?change.description:'与当前总危险相比'):'两阶段齐全后比较'));$('lesson-metrics').append(card);
+    }
     r.rows.forEach((row,ci)=>{
       const tr=el('tr');tr.dataset.cause=String(ci);const name=el('th',row.name);name.scope='row';tr.append(name);
       for(const value of [row.baseline,row.before?.applied,row.after?.applied,row.before?.d,row.after?.d,row.delta,row.contribution])tr.append(el('td',value===null||value===undefined?'—':fmt(value,2)));$('lesson-summary-rows').append(tr);
@@ -207,29 +268,43 @@
         if(fi===0){for(const value of [row.after?.applied,row.after?.d,row.delta,row.contribution]){const cell=el('td',numberCell(value));cell.rowSpan=row.factors.length;line.append(cell)}}$('lesson-full-rows').append(line);
       });
     });
-    if(complete){const max=Math.max(1,...r.rows.flatMap(row=>[row.before.d,row.after.d]));r.rows.forEach(row=>{const line=el('div','','lesson-bar-row');line.append(el('span',row.name,'lesson-bar-label'));for(const [phase,label]of [['before','当前'],['after','改善后']]){const track=el('div','','lesson-bar-track '+phase),bar=el('span','','lesson-bar-fill');bar.style.width=row[phase].d/max*100+'%';track.append(bar);track.setAttribute('aria-label',row.name+' '+label+' '+fmt(row[phase].d,2)+' /10万');line.append(track)}const stats=el('div','','lesson-bar-stats');stats.append(changeBadge(riskChange(row.before.d,row.after.d)),el('small',fmt(row.before.d,2)+' → '+fmt(row.after.d,2)));line.append(stats);$('lesson-risk-chart').append(line)});$('lesson-risk-chart').append(el('p','横轴单位：/10万；各项使用相同刻度。','help'))}else $('lesson-risk-chart').append(el('p','填完资料后，这里会显示各项改善前后的变化。','help'));
-    if(complete){
-      for(const [label,value]of [['实际年龄',+state.age],['评价年龄',r.beforeAge?.age],['增长年龄',r.afterAge?.age]]){const row=el('div','','age-row');row.append(el('span',label),el('strong',value===undefined?'超出表内区段':fmt(value,2)+' 岁'));$('lesson-ages').append(row)}
-      const explain=(name,value,a)=>!a?name+'：超出已录入的1600—61640参照区段，不外推。':name+'：'+fmt(value,2)+'位于'+a.low[0]+'（'+a.low[1]+'岁）与'+a.high[0]+'（'+a.high[1]+'岁）之间，内插得'+fmt(a.age,6)+'岁。';
-      $('lesson-age-note').textContent='实际年龄末位'+(+state.age%10)+'，使用表12-3的'+(+state.age%5)+' / '+(+state.age%5+5)+'列。\n'+explain('评价年龄',r.before,r.beforeAge)+'\n'+explain('增长年龄',r.after,r.afterAge);
-    }else $('lesson-age-note').textContent='12项死因全部完成并符合参数组后，才用合计危险查表12-3。';
+    const known=r.rows.flatMap(row=>[row.before?.d,row.after?.d]).filter(Number.isFinite);
+    if(known.length){
+      const max=Math.max(1,...known);r.rows.forEach(row=>{
+        const line=el('div','','lesson-bar-row');line.append(el('span',row.name,'lesson-bar-label'));
+        for(const [phase,label]of [['before','当前'],['after','改善后']]){const track=el('div','','lesson-bar-track '+phase);if(row[phase]){const bar=el('span','','lesson-bar-fill');bar.style.width=row[phase].d/max*100+'%';track.append(bar);track.setAttribute('aria-label',row.name+' '+label+' '+fmt(row[phase].d,2)+' /10万')}else{track.classList.add('pending');track.setAttribute('aria-label',row.name+' '+label+'待补资料')}line.append(track)}
+        const stats=el('div','','lesson-bar-stats'),change=row.before&&row.after?riskChange(row.before.d,row.after.d):null;stats.append(change?changeBadge(change):el('span','待补资料','lesson-change pending'),el('small',(row.before?fmt(row.before.d,2):'—')+' → '+(row.after?fmt(row.after.d,2):'—')));line.append(stats);$('lesson-risk-chart').append(line);
+      });$('lesson-risk-chart').append(el('p','横轴单位：/10万；各项使用相同刻度。'+(complete?'':'虚线表示资料未齐，未计作0。'),'help'));
+    }else $('lesson-risk-chart').append(el('p','填完资料后，这里会显示各项改善前后的变化。','help'));
+    if(r.beforeComplete||r.afterComplete){
+      for(const [label,value,ready]of [['实际年龄',+state.age,true],['评价年龄',r.beforeAge?.age,r.beforeComplete],['增长年龄',r.afterAge?.age,r.afterComplete]]){const row=el('div','','age-row');row.append(el('span',label),el('strong',!ready?'待补资料':value===undefined?'超出表内区段':fmt(value,2)+' 岁'));$('lesson-ages').append(row)}
+      const explain=(name,value,a,ready)=>!ready?name+'：对应阶段的资料尚未齐全。':!a?name+'：超出表内1600—61640的参照范围，不外推。':name+'：'+fmt(value,2)+'位于'+a.low[0]+'（'+a.low[1]+'岁）与'+a.high[0]+'（'+a.high[1]+'岁）之间，内插得'+fmt(a.age,6)+'岁。';
+      $('lesson-age-note').textContent='实际年龄末位'+(+state.age%10)+'，使用表12-3的'+(+state.age%5)+' / '+(+state.age%5+5)+'列。\n'+explain('评价年龄',r.before,r.beforeAge,r.beforeComplete)+'\n'+explain('增长年龄',r.after,r.afterAge,r.afterComplete);
+    }else $('lesson-age-note').textContent='当前和改善后的资料分别齐全后，各自查表12-3计算年龄。';
     for(const row of $('lesson-age-rows').children){row.classList.remove('current','after');const risk=Number(row.dataset.risk);if(r.beforeAge&&(risk===r.beforeAge.low[0]||risk===r.beforeAge.high[0]))row.classList.add('current');if(r.afterAge&&(risk===r.afterAge.low[0]||risk===r.afterAge.high[0]))row.classList.add('after');row.children[1].textContent=String(Number(row.dataset.base)+(+state.age%5||0))}
-    renderConversions();notify();
+    renderConversions();syncActions();
   }
   function renderConversions(){
     const host=$('lesson-factor-details'),open=new Set([...host.children].filter(n=>n.open).map(n=>n.dataset.cause)),manualOpen=new Set([...host.querySelectorAll('.lesson-manual[open]')].map(n=>n.dataset.factor));host.replaceChildren();if(!result)return;
-    result.rows.forEach((row,ci)=>{const details=el('details','','lesson-cause');details.dataset.cause=String(ci);details.open=open.has(String(ci));details.append(el('summary',row.name+' · '+row.factors.filter(f=>f.before!==null&&f.after!==null).length+'/'+row.factors.length+'项分数已确定'));
+    result.rows.forEach((row,ci)=>{
+      const details=el('details','','lesson-cause');details.dataset.cause=String(ci);details.open=open.has(String(ci));details.append(el('summary',row.name+' · '+row.factors.filter(f=>f.before!==null&&f.after!==null).length+'/'+row.factors.length+'项分数已确定'));
       row.factors.forEach(f=>{
         const box=el('div','','lesson-factor');box.append(el('h4',f.name));
         for(const [title,value,score,note]of [['当前',f.beforeValue,f.before,f.beforeNote],['改善后',f.afterValue,f.after,f.afterNote]])box.append(el('p',title+'：'+value+' → r＝'+numberCell(score)),el('p',note,'help'));
-        const manual=el('details','','lesson-manual');manual.dataset.factor=f.key;manual.open=manualOpen.has(f.key);manual.append(el('summary','补充或更正这项危险分数'),el('p','填写后点“应用这项系数”，再查看结果。留空可恢复自动转换。','help'));const grid=el('div','','lesson-manual-grid'),inputs={};
-        for(const phase of ['before','after']){const label=el('label',phase==='before'?'补充当前r':'补充改善后r'),input=el('input');input.type='number';input.min=0;input.max=1000000;input.step='any';input.value=state.overrides[f.key]?.[phase]||'';input.setAttribute('aria-label',row.name+' '+f.name+' '+(phase==='before'?'补充当前分数':'补充改善后分数'));input.placeholder='留空使用自动转换';label.append(input);inputs[phase]=input;grid.append(label)}
-        const label=el('label','补充分数的来源'),input=el('input');input.type='text';input.maxLength=500;input.value=state.overrides[f.key]?.source||'';input.setAttribute('aria-label',row.name+' '+f.name+' 补充分数来源');input.placeholder='填写表号、页码或原网址';label.append(input);grid.append(label);const apply=el('button','应用这项系数');apply.type='button';apply.setAttribute('aria-label',row.name+' '+f.name+' 应用这项系数');const manualError=el('p','','error');manualError.setAttribute('role','status');apply.onclick=()=>{const next={...state,overrides:{...state.overrides,[f.key]:{before:inputs.before.value,after:inputs.after.value,source:input.value}}};try{validate(next)}catch(e){manualError.textContent=e.message;return}state=next;changed();render()};manual.append(grid,apply,manualError);box.append(manual);details.append(box);
+        const manual=el('details','','lesson-manual');manual.dataset.factor=f.key;manual.open=manualOpen.has(f.key);manual.append(el('summary','补充或更正这项危险分数'),el('p','填写后点“应用这项系数”。未应用的草稿也会随填写资料一起保存。','help'));
+        const grid=el('div','','lesson-manual-grid'),inputs={},entry=state.drafts?.[f.key]||state.overrides[f.key]||{},draftNote=el('p',state.drafts?.[f.key]?'草稿尚未应用。':'','help'),manualError=el('p','','error');manualError.setAttribute('role','status');
+        for(const phase of ['before','after']){const label=el('label',phase==='before'?'补充当前r':'补充改善后r'),input=el('input');input.type='number';input.min=0;input.max=1000000;input.step='any';input.value=entry[phase]||'';input.dataset.phase=phase;input.setAttribute('aria-label',row.name+' '+f.name+' '+(phase==='before'?'补充当前分数':'补充改善后分数'));input.placeholder='留空使用自动转换';label.append(input);inputs[phase]=input;grid.append(label)}
+        const label=el('label','补充分数的来源'),sourceInput=el('input');sourceInput.type='text';sourceInput.maxLength=500;sourceInput.value=entry.source||'';sourceInput.setAttribute('aria-label',row.name+' '+f.name+' 补充分数来源');sourceInput.placeholder='填写表号、页码或原网址';label.append(sourceInput);grid.append(label);
+        const apply=el('button','应用这项系数'),discard=el('button','放弃这项草稿');apply.type=discard.type='button';apply.setAttribute('aria-label',row.name+' '+f.name+' 应用这项系数');discard.setAttribute('aria-label',row.name+' '+f.name+' 放弃草稿');discard.hidden=!state.drafts?.[f.key];
+        const remember=()=>{state.drafts??={};state.drafts[f.key]={before:inputs.before.value,after:inputs.after.value,source:sourceInput.value};changed();draftNote.textContent='草稿尚未应用，保存时会一并保留。';manualError.textContent='';discard.hidden=false;syncActions()};for(const input of [...Object.values(inputs),sourceInput])input.addEventListener('input',remember);
+        apply.onclick=()=>{try{state=applyCoefficient(state,f.key,{before:inputs.before.value,after:inputs.after.value,source:sourceInput.value});changed();render()}catch(e){manualError.textContent=e.message}};
+        discard.onclick=()=>{delete state.drafts[f.key];changed();render()};const toolbar=el('div','','toolbar compact');toolbar.append(apply,discard);manual.append(grid,draftNote,toolbar,manualError);box.append(manual);details.append(box);
       });
-      if(row.before&&row.after){const steps=el('div','','steps');steps.textContent=[['当前',row.before],['改善后',row.after]].map(([name,v])=>name+'：X＝'+(v.high.length?v.high.map(n=>'('+n+'−1)').join('＋'):'0')+'＝'+fmt(v.x,6)+'\nY＝'+(v.low.length?v.low.join('×'):'1')+'＝'+fmt(v.y,6)+'\nR＝X＋Y＝'+fmt(v.r,6)+'；采用R＝'+fmt(v.applied,6)+'\nD＝'+v.m+'×'+fmt(v.applied,6)+'＝'+fmt(v.d,6)+' /10万').join('\n\n');details.append(steps)}host.append(details);
+      if(row.before||row.after){const steps=el('div','','steps');steps.textContent=[['当前',row.before],['改善后',row.after]].map(([name,v])=>!v?name+'：资料尚未齐全。':name+'：X＝'+(v.high.length?v.high.map(n=>'('+n+'−1)').join('＋'):'0')+'＝'+fmt(v.x,6)+'\nY＝'+(v.low.length?v.low.join('×'):'1')+'＝'+fmt(v.y,6)+'\nR＝X＋Y＝'+fmt(v.r,6)+'；采用R＝'+fmt(v.applied,6)+'\nD＝'+v.m+'×'+fmt(v.applied,6)+'＝'+fmt(v.d,6)+' /10万').join('\n\n');details.append(steps)}host.append(details);
     });
   }
-  function hasWork(){return Object.values(state.before).some(has)||Object.values(state.after).some(has)||Object.keys(state.overrides).length>0}
+
+  function hasWork(){return Object.values(state.before).some(has)||Object.values(state.after).some(has)||Object.keys(state.overrides).length>0||Object.keys(state.drafts||{}).length>0}
   function replaceAllowed(){return !hasWork()||root.confirm('当前课堂资料将被替换。需要保留的话请先保存，继续吗？')}
   function init(options={}){
     document=root.document;notify=options.onChange||(()=>{});save=options.download||((text,name,type='text/plain')=>{const url=URL.createObjectURL(new Blob(['\ufeff'+text],{type:type+';charset=utf-8'})),a=el('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500)});
@@ -239,15 +314,15 @@
     $('lesson-form').onsubmit=e=>e.preventDefault();
     $('lesson-demo').onclick=()=>{if(!replaceAllowed())return;state=example();renderFields();render();$('lesson-status').textContent='已载入课堂例题。可以试着改几项数值，看看结果怎样变化。'};
     $('lesson-clear').onclick=()=>{if(!replaceAllowed())return;state=blank();renderFields();render();$('lesson-status').textContent='已清空变量。当前值未知就留空，改善后留空表示保持当前。'};
-    $('lesson-unchanged').onclick=()=>{state.after=clean();Object.values(state.overrides).forEach(o=>o.after='');changed();renderFields();render();$('lesson-status').textContent='已将改善后设为保持当前，当前填写的资料没有改动。'};
-    $('lesson-four').onclick=()=>{Object.assign(state.after,{activity:'regular',weightBasis:'average',depression:'treated',proctoscopy:'annual'});for(const id of ['activity','weightBasis','depression','proctoscopy'])clearAffected(id);changed();renderFields();render();$('lesson-status').textContent='已填入课件第174页的4项改变，结果已更新。'};
-    $('lesson-save').onclick=()=>{const s=validate(state);save(JSON.stringify(s,null,2),'健康危险因素评价_课堂资料.json','application/json');$('lesson-status').textContent='填写内容已保存，下次可以导入接着填。'};
+    $('lesson-unchanged').onclick=()=>{state.after=clean();Object.values(state.overrides).forEach(o=>o.after='');for(const [key,draft]of Object.entries(state.drafts||{})){draft.after='';if(!has(draft.before))delete state.drafts[key]}changed();renderFields();render();$('lesson-status').textContent='已将改善后设为保持当前，当前填写的资料没有改动。'};
+    $('lesson-four').onclick=()=>{for(const [id,value]of Object.entries({activity:'regular',weightBasis:'average',depression:'treated',proctoscopy:'annual'}))state=setVariable(state,'after',id,value);changed();renderFields();render();$('lesson-status').textContent='已填入课件第174页的4项改变，结果已更新。'};
+    $('lesson-save').onclick=()=>{const s=validate(state);save(JSON.stringify(s,null,2),'健康危险因素评价_课堂资料.json','application/json');$('lesson-status').textContent=Object.keys(s.drafts).length?'填写内容和未应用的系数草稿已保存，下次可以导入接着填。':'填写内容已保存，下次可以导入接着填。'};
     $('lesson-import').onchange=async()=>{const input=$('lesson-import'),file=input.files?.[0];if(!file)return;try{if(file.size>150000)throw Error('请选择小于150KB的单份课堂资料');const next=validate(JSON.parse((await file.text()).replace(/^\uFEFF/,'')));if(!replaceAllowed())return;state=next;renderFields();render();$('lesson-status').textContent='已恢复课堂资料。'}catch(e){$('lesson-status').textContent='没有导入，原资料保留。'+(e instanceof SyntaxError?'文件不是有效JSON。':e.message)}finally{input.value=''}};
     $('lesson-csv').onclick=()=>{try{save(csv(state),'健康危险因素评价_表12-1完整结果.csv','text/csv');$('lesson-status').textContent='已导出表12-1的13列、分数依据、合计及查表年龄。'}catch(e){$('lesson-status').textContent=e.message}};
     $('lesson-print').onclick=()=>{document.body.classList.add('printing-lesson');root.print()};root.addEventListener('afterprint',()=>document.body.classList.remove('printing-lesson'));
     $('lesson-view').onclick=()=>{$('lesson-results-title').focus();$('lesson-results-title').scrollIntoView({block:'start'})};
     renderFields();render();
   }
-  const api={fields,groups,bindings,source,ageRows,blank,example,validate,analyse,ageLookup,riskChange,csv,report,init,get ready(){return !!result?.complete},get result(){return result},get state(){return state}};
+  const api={fields,groups,bindings,source,ageRows,blank,example,validate,analyse,ageLookup,riskChange,csv,report,setVariable,applyCoefficient,init,get ready(){return !!result?.complete&&!Object.keys(state.drafts||{}).length},get result(){return result},get state(){return state}};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.HraLesson=api;
 })(typeof window!=='undefined'?window:globalThis);

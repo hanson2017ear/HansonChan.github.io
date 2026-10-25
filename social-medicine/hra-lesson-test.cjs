@@ -42,9 +42,131 @@ for(const [id,value,cause]of [['suicideFamily','yes',2],['murmur','yes',6],['rhe
   const afterOnly=copy(ex);afterOnly.after[id]=value;const ar=h.analyse(afterOnly);assert.ok(ar.rows[cause].before);assert.equal(ar.rows[cause].after,null);
 }
 const hasMurmur=copy(ex);hasMurmur.before.murmur='yes';hasMurmur.overrides['6-0']={before:'2',after:'',source:'测试用模拟系数'};const hm=h.analyse(hasMurmur);assert.equal(hm.complete,true);assert.equal(hm.rows[6].factors[0].beforeValue,'有');near(hm.rows[6].factors[0].before,2);assert.match(h.csv(hasMurmur),/"心脏杂音","有","2"/);
+// Editing one period must preserve the independent coefficient and its provenance in the other.
+const twoPeriods=copy(hasMurmur);twoPeriods.overrides['6-0'].after='3';
+const afterEdit=h.setVariable(twoPeriods,'after','murmur','none');
+assert.deepEqual(afterEdit.overrides['6-0'],{before:'2',after:'',source:'测试用模拟系数'});
+near(h.analyse(afterEdit).rows[6].factors[0].before,2);near(h.analyse(afterEdit).rows[6].factors[0].after,1);
+assert.deepEqual(h.validate(JSON.parse(JSON.stringify(afterEdit))).overrides,afterEdit.overrides);
+assert.equal(twoPeriods.overrides['6-0'].after,'3');assert.equal(twoPeriods.after.murmur,'');
+const independent=copy(twoPeriods);independent.after.murmur='none';
+const beforeEdit=h.setVariable(independent,'before','murmur','none');
+assert.deepEqual(beforeEdit.overrides['6-0'],{before:'',after:'3',source:'测试用模拟系数'});
+near(h.analyse(beforeEdit).rows[6].factors[0].before,1);near(h.analyse(beforeEdit).rows[6].factors[0].after,3);
+const inheritedEdit=h.setVariable(twoPeriods,'before','murmur','none');
+assert.equal(inheritedEdit.overrides['6-0'],undefined);near(h.analyse(inheritedEdit).rows[6].factors[0].after,1);
+const resetAfter=h.setVariable(independent,'after','murmur','');
+assert.deepEqual(resetAfter.overrides['6-0'],{before:'2',after:'',source:'测试用模拟系数'});near(h.analyse(resetAfter).rows[6].factors[0].after,2);
+assert.equal(h.setVariable(twoPeriods,'before','murmur','yes'),twoPeriods);
+const fourChanges=copy(ex);fourChanges.after=h.blank().after;
+for(const key of ['0-3','0-6','9-1','2-0','8-3'])fourChanges.overrides[key]={before:'2',after:'3',source:'各期测试系数'};
+fourChanges.overrides['5-0']={before:'.2',after:'.4',source:'未修改因素的系数'};
+let appliedFour=fourChanges;for(const [id,value]of Object.entries({activity:'regular',weightBasis:'average',depression:'treated',proctoscopy:'annual'}))appliedFour=h.setVariable(appliedFour,'after',id,value);
+for(const key of ['0-3','0-6','9-1','2-0','8-3'])assert.deepEqual(appliedFour.overrides[key],{before:'2',after:'',source:'各期测试系数'});
+assert.deepEqual(appliedFour.overrides['5-0'],fourChanges.overrides['5-0']);assert.equal(fourChanges.overrides['0-3'].after,'3');
+const inactiveWeight=copy(ex);inactiveWeight.before.weightBasis='average';inactiveWeight.after.weightBasis='average';inactiveWeight.overrides['0-6']={before:'.9',after:'.8',source:'平均体重测试系数'};
+assert.deepEqual(h.setVariable(inactiveWeight,'before','excess','40').overrides,inactiveWeight.overrides);
 const drinking=copy(ex);drinking.before.alcohol='yes';const dr=h.analyse(drinking);assert.equal(dr.complete,false);assert.equal(h.validate(drinking).before.alcohol,'yes');dr.rows.forEach((row,i)=>{if([1,3,7].includes(i)){assert.equal(row.before,null);assert.equal(row.after,null)}else assert.ok(row.before&&row.after)});
 const chdChange=h.riskChange(r.rows[0].before.d,r.rows[0].after.d);assert.equal(chdChange.direction,'down');near(chdChange.percent,3378.6/3585.07*100);assert.equal(chdChange.label,'94.2%');assert.notEqual(chdChange.percent,r.rows[0].contribution);
 assert.equal(h.riskChange(r.before,r.after).label,'52.1%');assert.equal(h.riskChange(660,396).label,'40%');assert.equal(h.riskChange(111,33.3).label,'70%');assert.equal(h.riskChange(39.2,22.4).label,'42.9%');
 assert.equal(h.riskChange(100,125).direction,'up');assert.equal(h.riskChange(100,125).label,'25%');assert.equal(h.riskChange(10,0).label,'100%');assert.equal(h.riskChange(0,0).direction,'flat');assert.equal(h.riskChange(0,5).percent,null);assert.equal(h.riskChange(0,5).label,'由0增加');assert.equal(h.riskChange(100,99.999).label,'<0.1%');assert.equal(h.riskChange(1,1+1e-14).direction,'flat');assert.equal(h.riskChange(null,1),null);assert.equal(h.riskChange(1,NaN),null);assert.equal(h.riskChange(-1,1),null);
 const text=h.report(ex);assert.match(text,/7167.45 → 3430.35/);assert.match(text,/评价年龄：43.456014/);assert.match(text,/3737.1/);assert.match(text,/风险对应年龄/);
 console.log('Passed: classroom table 12-1 all 12 causes and 33 factors; table 12-2 interpolation and given-value policies; table 12-3 age columns; partial/missing coefficients, units, manual provenance, snapshots and 13-column CSV.');
+
+// Real-entry regressions: equivalent numbers, independent phases and saved coefficient drafts.
+{
+  const decimals=h.example();decimals.before.mileage='25000.0';decimals.before.seatbelt='9e1';decimals.before.excess='30.0';near(h.analyse(decimals).before,7167.45);assert.equal(h.validate(decimals).before.mileage,'25000');
+  const numeric=h.example();numeric.before.mileage='26000';numeric.overrides['1-1']={before:'2.6',after:'',source:'模拟里程系数'};numeric.after.mileage='26000.0';near(h.analyse(numeric).rows[1].factors[1].after,2.6);assert.deepEqual(h.setVariable(numeric,'before','mileage','26000.0'),numeric);
+  const oldFile=copy(h.example());delete oldFile.drafts;assert.deepEqual(h.validate(oldFile).drafts,{});
+  const draft=h.example();draft.drafts['6-0']={before:'2',after:'',source:''};const original=JSON.stringify(draft);near(h.analyse(draft).before,7167.45);assert.equal(h.validate(JSON.parse(original)).drafts['6-0'].before,'2');assert.throws(()=>h.csv(draft),/草稿/);assert.throws(()=>h.report(draft),/草稿/);assert.throws(()=>h.applyCoefficient(draft,'6-0',draft.drafts['6-0']),/来源/);assert.equal(JSON.stringify(draft),original);
+  const withSource={...draft.drafts['6-0'],source:'仅供界面测试的模拟系数'};const applied=h.applyCoefficient(draft,'6-0',withSource);assert.deepEqual(applied.drafts,{});near(h.analyse(applied).rows[6].factors[0].before,2);assert.ok(h.csv(applied));
+  const bad=h.example();bad.drafts['6-0']={before:'-2',after:'',source:'模拟非法值'};assert.equal(h.validate(bad).drafts['6-0'].before,'-2');assert.throws(()=>h.applyCoefficient(bad,'6-0',bad.drafts['6-0']),/危险分数/);near(h.analyse(bad).before,7167.45);
+  assert.throws(()=>h.validate({...h.example(),drafts:{'99-0':{before:'2',after:'',source:'x'}}}),/草稿项目/);assert.throws(()=>h.validate({...h.example(),drafts:{'6-0':{before:2,after:'',source:'x'}}}),/草稿/);
+  const d=h.example();d.before.murmur='yes';d.after.murmur='yes';d.drafts['6-0']={before:'2',after:'3',source:'模拟草稿'};const changed=h.setVariable(d,'after','murmur','none');assert.equal(changed.drafts['6-0'].before,'2');assert.equal(changed.drafts['6-0'].after,'');assert.equal(d.drafts['6-0'].after,'3');
+  const up=h.example();up.after.activity='sedentary';up.after.weightBasis='percent';up.after.excess='30';up.overrides['2-0']={before:'2.5',after:'100',source:'模拟上升情景'};assert.match(h.report(up),/总危险变化：比当前上升/);
+}
+
+{
+const original = h.analyse(h.example());
+assert.equal(original.beforeComplete, true);
+assert.equal(original.afterComplete, true);
+assert.equal(original.complete, true);
+near(original.before, 7167.45);
+near(original.after, 3430.35);
+near(original.beforeAge.age, 43.45601351351351);
+near(original.afterAge.age, 36.29514705882353);
+
+// An unfinished improvement must not erase the fully determined current result.
+const afterPending = h.example();
+afterPending.after.murmur = 'yes';
+const currentOnly = h.analyse(afterPending);
+assert.equal(currentOnly.beforeComplete, true);
+assert.equal(currentOnly.afterComplete, false);
+assert.equal(currentOnly.complete, false);
+near(currentOnly.before, 7167.45);
+near(currentOnly.beforeAge.age, 43.45601351351351);
+assert.equal(currentOnly.after, null);
+assert.equal(currentOnly.afterAge, null);
+assert.equal(currentOnly.delta, null);
+assert.equal(currentOnly.percent, null);
+assert.equal(currentOnly.rows[6].contribution, null);
+near(currentOnly.rows[0].contribution, original.rows[0].contribution);
+assert.equal(currentOnly.finished, 11);
+assert.throws(() => h.csv(afterPending));
+assert.throws(() => h.report(afterPending));
+
+// An explicit known improvement can be shown even when the current coefficient is missing.
+const beforePending = h.example();
+beforePending.before.murmur = 'yes';
+beforePending.after.murmur = 'none';
+const improvementOnly = h.analyse(beforePending);
+assert.equal(improvementOnly.beforeComplete, false);
+assert.equal(improvementOnly.afterComplete, true);
+assert.equal(improvementOnly.complete, false);
+assert.equal(improvementOnly.before, null);
+assert.equal(improvementOnly.beforeAge, null);
+near(improvementOnly.after, 3430.35);
+near(improvementOnly.afterAge.age, 36.29514705882353);
+assert.equal(improvementOnly.delta, null);
+assert.equal(improvementOnly.percent, null);
+assert.ok(improvementOnly.rows.every(row => row.contribution === null));
+assert.throws(() => h.csv(beforePending));
+
+const blank = h.analyse(h.blank());
+assert.equal(blank.beforeComplete, false);
+assert.equal(blank.afterComplete, false);
+assert.equal(blank.before, null);
+assert.equal(blank.after, null);
+assert.equal(blank.beforeAge, null);
+assert.equal(blank.afterAge, null);
+
+for (const patch of [{sex: 'female'}, {age: '39'}, {age: '45'}, {age: ''}]) {
+  const outside = h.analyse({...h.example(), ...patch});
+  assert.equal(outside.applicable, false);
+  assert.equal(outside.beforeComplete, false);
+  assert.equal(outside.afterComplete, false);
+  assert.equal(outside.before, null);
+  assert.equal(outside.after, null);
+  assert.equal(outside.beforeAge, null);
+  assert.equal(outside.afterAge, null);
+}
+
+const zero = h.example();
+zero.after = h.blank().after;
+h.bindings.forEach((factors, ci) => factors.forEach((_, fi) => {
+  zero.overrides[ci + '-' + fi] = {before: '0', after: '', source: '模拟零值边界'};
+}));
+const zeroResult = h.analyse(zero);
+assert.equal(zeroResult.beforeComplete, true);
+assert.equal(zeroResult.afterComplete, true);
+assert.equal(zeroResult.complete, true);
+near(zeroResult.before, 0);
+near(zeroResult.after, 0);
+assert.equal(zeroResult.percent, null);
+assert.equal(zeroResult.beforeAge, null);
+assert.equal(zeroResult.afterAge, null);
+assert.ok(zeroResult.rows.every(row => row.contribution === null));
+
+console.log('Passed: phase totals and age lookups remain independent; only complete comparisons expose aggregate change and CSV; contribution denominators and zero/outside-group cases are guarded.');
+
+}
