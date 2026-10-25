@@ -315,12 +315,12 @@
     const paper=el('article','','lesson-print-paper');paper.append(el('p','社会医学 · 课堂练习','lp-kicker'),el('h1','健康危险因素评价'));
     paper.append(el('p','男性40—44岁参数；实际年龄 '+state.age+' 岁；'+policyLabel(state)+'；'+(state.roundFirst?'R先保留2位小数':'R使用完整精度')+'。','lp-meta'));
     const summary=el('section','','lp-summary');summary.append(el('h2','结果总览'),$('lesson-metrics').cloneNode(true));
-    summary.lastChild.removeAttribute('id');const totals=$('lesson-summary-rows').closest('table').cloneNode(true);totals.querySelector('tbody').removeAttribute('id');summary.append(totals);
+    summary.lastChild.removeAttribute('id');const totals=$('lesson-summary-rows').closest('table').cloneNode(true);totals.querySelector('tbody').removeAttribute('id');[...totals.tBodies[0].rows].forEach((tr,i)=>{tr.cells[2].textContent=numberCell(result.rows[i].before.applied);tr.cells[3].textContent=numberCell(result.rows[i].after.applied)});summary.append(totals,el('p','r、R最多显示6位小数，D与总量显示2位。计算使用所选取整方式；降低量为负时表示增加。','lp-meta'));
     const ages=$('lesson-ages').cloneNode(true);ages.removeAttribute('id');summary.append(el('h3','年龄查表'),ages,el('p',$('lesson-age-note').textContent,'lp-age-note'),el('p','评价年龄与增长年龄是风险对应年龄，不代表预计寿命或延寿年数。','lp-meta'));paper.append(summary);
     const chart=el('section','','lp-page-start');chart.append(el('h2','改善前后对照'));const figure=$('lesson-risk-chart').closest('figure').cloneNode(true);figure.querySelector('#lesson-risk-chart').removeAttribute('id');chart.append(figure,el('p','计算式：R＝Σ(r＞1时的r−1)＋Π(r≤1时的r)；D＝M×R。各项D相加得到总危险。表末“占原总危险%”以原总危险为分母；图旁箭头以该项当前D为分母。','lp-meta'));paper.append(chart);
     const factors=el('section','','lp-page-start');factors.append(el('h2','表12-1 · 逐项取值'),el('p','总览对应原表第1、2、6、7、10—13列；以下明细对应第3、4、5、8、9列。两部分合起来保留完整13列内容。','lp-meta'));
     for(const row of result.rows){
-      const block=el('section','','lp-cause');block.append(el('h3',row.name),el('p','基准率M＝'+row.baseline+' /10万；R：'+fmt(row.before.applied,2)+' → '+fmt(row.after.applied,2)+'；D：'+fmt(row.before.d,2)+' → '+fmt(row.after.d,2)+' /10万。','lp-meta'));
+      const block=el('section','','lp-cause');block.append(el('h3',row.name),el('p','基准率M＝'+row.baseline+' /10万；R：'+numberCell(row.before.applied)+' → '+numberCell(row.after.applied)+'；D：'+fmt(row.before.d,2)+' → '+fmt(row.after.d,2)+' /10万。','lp-meta'));
       const table=el('table','','lp-factor-table'),head=el('thead'),tr=el('tr');for(const label of ['(3)因素','(4)当前指标','(5)r','(8)改善设定','(9)新r']){const th=el('th',label);th.scope='col';tr.append(th)}head.append(tr);table.append(head);const body=el('tbody');
       for(const f of row.factors){const line=el('tr');for(const value of [f.name,f.beforeValue,numberCell(f.before),f.afterChange,numberCell(f.after)])line.append(el('td',value));body.append(line)}table.append(body);block.append(table);factors.append(block);
     }
