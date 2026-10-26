@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="填写WHOQOL-100问卷，按课堂表12-1、12-2、12-3计算健康危险因素评价，并复习QALY计算。">
+  <title>社会医学课程练习 · 蓝色对比版</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#214F7E">
+  <link rel="icon" type="image/svg+xml" href="ai-design-mark.svg">
+  <link rel="stylesheet" href="style.css?v=20261025save1">
+  <link rel="stylesheet" href="ai-design.css?v=20261026a">
+</head>
+<body class="ai-design">
+<a class="skip" href="#workspace">跳到计算区</a>
+<main>
+  <header class="masthead ai-masthead">
+    <a class="ai-brand" href="#hra"><img src="ai-design-mark.svg" width="40" height="40" alt=""><h1>社会医学<small>课程练习</small></h1></a>
+    <div class="ai-edition"><span>李鲁主编《社会医学》第5版</span><a id="ai-original-link" href="index.html#hra" target="_blank" rel="noopener">打开原版对比</a></div>
+  </header>
+  <nav role="tablist" aria-label="练习模块">
+    <button id="tab-whoqol" role="tab" aria-selected="true" aria-controls="whoqol" data-tab="whoqol">生命质量问卷</button>
+    <button id="tab-hra" role="tab" aria-selected="false" aria-controls="hra" data-tab="hra" tabindex="-1">健康危险因素评价</button>
+    <button id="tab-qaly" role="tab" aria-selected="false" aria-controls="qaly" data-tab="qaly" tabindex="-1">QALY计算</button>
+    <button id="tab-notes" role="tab" aria-selected="false" aria-controls="notes" data-tab="notes" tabindex="-1">计分说明与来源</button>
+  </nav>
+  <div id="workspace" tabindex="-1">
+  <section id="whoqol" class="panel" role="tabpanel" aria-labelledby="tab-whoqol">
+    <div class="intro"><div><p class="kicker">WHOQOL-100 · 课堂问卷</p><h2>生命质量问卷</h2><p>请回想<b>最近两周</b>的情况，选择最符合自己感受的一项。共100题，每组4题。</p></div><div class="intro-note">题目与选项按课堂问卷整理<br>填完整后显示评分</div></div>
+    <p id="who-mode" class="questionnaire-note" role="status"></p>
+    <div class="toolbar"><button id="who-save" class="primary" disabled>保存答卷</button><label class="file-button">导入答卷<input id="who-import" type="file" accept=".csv,text/csv"></label><button id="who-clear">重新填写</button></div>
+    <p class="help" id="who-save-status" role="status">离开前请保存答卷。未填完也可以保存，下次导入后接着填。</p>
+    <details class="who-examples"><summary>课堂示例与空白CSV</summary><div class="toolbar"><button id="who-demo">查看示例答卷</button><button id="who-followup">查看示例前后变化</button><button id="who-template">下载空白CSV</button></div><p class="help">示例使用模拟答案，方便核对计分。已有纸质答卷也可以按题目代码填写CSV后导入，选项仍按原始A—E记录。</p></details>
+    <div class="workspace-grid">
+      <div class="question-pane">
+        <div class="who-progress-block"><div class="section-top"><h3>填写问卷</h3><span id="who-progress" class="counter" aria-live="polite">已答 0 / 100 题</span></div><progress id="who-progress-bar" value="0" max="100" aria-label="作答进度"></progress></div>
+        <div id="who-question-top" class="who-group-picker"><label for="who-group">选择题组</label><select id="who-group" aria-describedby="who-group-context"></select><small id="who-group-context"></small></div>
+        <div id="who-fields" class="who-fields"></div>
+        <div class="who-page-controls"><button id="who-prev">上一组</button><button id="who-review" class="text-button">查找漏答</button><button id="who-next" class="primary">下一组</button></div>
+        <p id="who-navigation-note" class="help" role="status"></p>
+        <p class="help question-source">题目来源：课堂《生存质量测定量表（WHOQOL-100）》第1—7页。按方面分组显示，保留原题代码；选项文字不作统一替换。</p>
+        <p id="who-error" class="error" role="status"></p>
+        <details class="process"><summary>查看计分过程</summary><label class="select-label">选择方面<select id="who-facet"></select></label><div id="who-steps" class="steps"></div></details>
+      </div>
+      <aside class="score-pane" id="who-results">
+        <div class="section-top"><h3 id="who-result-title" tabindex="-1">评分结果</h3><span class="help">0—100 分</span></div>
+        <div id="who-legend" class="legend"></div>
+        <div id="who-chart" class="domain-chart" aria-label="WHOQOL-100六领域得分"></div>
+        <div id="who-result-details" hidden>
+          <div class="overall"><span>课堂五领域均分</span><strong id="who-class-summary">—</strong><small>生理、心理、独立性、社会关系、环境五个领域的平均分</small></div>
+          <div class="overall"><span>总体生命质量与健康（G1—G4）</span><strong id="who-general">—</strong><small id="who-general-items"></small></div>
+          <div class="toolbar compact"><button id="who-reference">保留本次结果作对照</button><button id="who-unreference" hidden>取消对照</button></div>
+          <p id="who-reference-note" class="help"></p>
+        </div>
+        <p id="who-comment" class="help"></p>
+        <div class="marginal-note"><b>如何理解分数</b><p>分数较高，表示该领域的生命质量较好。还要结合睡眠、精力等具体方面和本人的生活情况分析，不能仅凭分数判断是否患病。</p></div>
+      </aside>
+    </div>
+  </section>
+  <section id="hra" class="panel" role="tabpanel" aria-labelledby="tab-hra" hidden>
+    <div class="intro ai-hra-intro"><div><p class="kicker">社会医学课堂计算</p><h2>健康危险因素评价</h2><p>把当前情况和改善计划放在一起，<br class="ai-desktop-break">看清每项改变对计算结果的影响。</p><div class="ai-scope"><span>男性40—44岁参数</span><span>资料仅在本页计算</span></div></div>
+    <figure class="ai-method" aria-label="课堂三表计算关系：原始变量转换为单项危险分数，组合后计算各项危险，最后查对应年龄"><div class="ai-method-top"><span>变量</span><span>单项分数</span><span>组合分数</span><span>危险</span></div><div class="ai-method-flow"><b>x</b><span>→</span><b>r</b><span>→</span><b>R</b><span>→</span><b>D</b></div><figcaption>冠心病：表12-2换算分数<br>各死因：表12-1综合计算<br>合计危险 → 表12-3对应年龄</figcaption></figure></div>
+    <ol class="lesson-path" aria-label="计算顺序"><li><b>01</b> 填写变量</li><li><b>02</b> 转换危险分数</li><li><b>03</b> 生成表12-1</li><li><b>04</b> 查表12-3</li></ol>
+    <div class="toolbar"><button id="lesson-demo" class="primary">载入课堂例题</button><button id="lesson-save">保存这次填写</button><label class="file-button">导入已存资料<input id="lesson-import" type="file" accept=".json,application/json"></label><button id="lesson-clear">清空重填</button><button id="lesson-view">查看计算结果</button></div>
+    <p id="lesson-save-help" class="help">保存会下载JSON文件。刷新或重新打开页面后不会自动恢复；下次请点击“导入已存资料”，选择保存的文件继续填写。</p>
+    <p id="lesson-status" class="help" role="status">不知道的当前值可以留空；改善后未填的项目，按当前情况计算。</p>
+    <div class="ai-entry-layout">
+    <form id="lesson-form" novalidate>
+      <section class="lesson-setup" aria-labelledby="lesson-setup-title"><h3 id="lesson-setup-title">先确认基本信息</h3><div class="lesson-setup-grid">
+        <label>实际年龄（岁）<input id="lesson-age" type="number" min="0" max="120" step="1" value="41"></label>
+        <label>性别<select id="lesson-sex"><option value="male">男</option><option value="female">女（需补充相应参数）</option></select></label>
+        <label>血压单位<select id="lesson-bpUnit"><option value="mmHg">mmHg</option><option value="kPa">kPa</option></select></label>
+        <label>用哪项血压换算分数<select id="lesson-bpIndicator"><option value="sbp">收缩压</option><option value="dbp">舒张压</option></select></label>
+        <label class="lesson-policy">冠心病分数取值<select id="lesson-policy"><option value="table">按表12-2内插计算</option><option value="given">优先用表12-1给定值</option></select></label>
+      </div><label class="check"><input id="lesson-round" type="checkbox" checked>按课堂表格，R先保留2位小数，再计算D</label><p class="help">本页使用男性40—44岁组参数。冠心病按表12-2取值，其他死因按表12-1计算；遇到资料未列的情况，可在下方补充有来源的系数。</p></section>
+      <div class="section-top"><h3>填写当前情况与改善计划</h3><span class="help">原始变量 → 危险分数r</span></div>
+      <p class="help">同样是“不吸烟”，冠心病、脑血管病和肺癌的r值分别为0.5、0.8、0.2，因此每项都要单独取值。</p>
+      <div id="lesson-fields"></div>
+      <div class="toolbar"><button id="lesson-four" type="button">填入例题的4项改善</button><button id="lesson-unchanged" type="button">全部按当前情况计算</button></div><p class="help">例题设定：定期锻炼、恢复平均体重、治疗抑郁、每年直肠镜检查。其中的检查安排是原题条件，不是现实筛查建议。</p>
+    </form>
+    <aside class="ai-live" aria-labelledby="ai-live-title">
+      <div class="ai-live-heading"><h3 id="ai-live-title">本次计算</h3><span id="ai-live-mode">等待填写</span></div>
+      <div class="ai-completion"><div class="ai-ring"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ai-ring-track" cx="60" cy="60" r="50"/><circle id="ai-ring-value" cx="60" cy="60" r="50"/></svg><div><strong id="ai-live-count">0<span>/12</span></strong><small>当前可计算死因</small></div></div><p id="ai-live-progress">补齐变量后更新结果。</p></div>
+      <div id="ai-live-metrics"><p class="ai-empty-note">先填写左侧变量，或载入课堂例题看看。<br>资料不全的项目会留空，不记作0。</p></div>
+      <button type="button" class="primary ai-view-results" data-ai-target="lesson-results-title">查看各项结果</button>
+      <div class="ai-jump"><h4>快速定位</h4><div id="ai-group-links"></div><button type="button" data-ai-target="lesson-conversion">分数与取值依据</button><button type="button" data-ai-target="lesson-age-title">评价年龄与增长年龄</button></div>
+      <p class="ai-live-foot">用课堂历史参数练习计算。<br>结果不用于个人诊疗或筛查安排。</p>
+    </aside></div>
+
+    <details id="lesson-conversion" class="process lesson-conversion"><summary>查看分数和取值依据</summary><p class="help">这里列出每项变量对应的r值、内插过程和出处。缺少系数时，可填写r值并附上表号、页码或原网址。未应用的草稿也会随资料保存。修改变量时，只重新检查受影响的系数；另一边独立填写的数值会保留。</p><div id="lesson-factor-details"></div></details>
+    <section class="lesson-results" aria-labelledby="lesson-results-title"><div class="report-heading"><div><p class="kicker">表12-1 · 第6—13列</p><h3 id="lesson-results-title" tabindex="-1">各死因的计算结果</h3><p id="lesson-mode" class="help"></p></div><div class="toolbar"><button id="lesson-csv" class="primary" disabled>导出表12-1（CSV）</button><button id="lesson-print" disabled>打印预览 / 保存PDF</button></div></div>
+      <p id="lesson-progress" class="help" role="status"></p><p id="lesson-error" class="error" role="status"></p><div id="lesson-pending"></div>
+      <div id="lesson-metrics" class="metric-band" aria-live="polite"></div>
+      <div class="lesson-results-grid"><div class="table-scroll"><table class="lesson-summary-table"><caption>各死因汇总（M、D单位：/10万）</caption><thead><tr><th scope="col">死因</th><th scope="col">基准率M</th><th scope="col">当前R</th><th scope="col">改善后R</th><th scope="col">当前D</th><th scope="col">改善后D</th><th scope="col">降低量</th><th scope="col">占原总危险%</th></tr></thead><tbody id="lesson-summary-rows"></tbody></table></div><figure class="lesson-risk-figure"><figcaption>改善前后对照（D，/10万）</figcaption><div class="lesson-legend"><span>当前</span><span>改善后</span></div><div id="lesson-risk-chart"></div><p class="help">箭头旁为该项相对变化；表格末列为占原总危险的比例。</p></figure></div>
+      <details class="process"><summary>查看完整表12-1（共13列）</summary><div class="table-scroll"><table class="lesson-full-table"><caption>表12-1：变量、分数与计算结果</caption><thead><tr><th>(1)死亡原因</th><th>(2)死亡概率<br>/10万</th><th>(3)疾病诱发因素</th><th>(4)指标值</th><th>(5)危险分数</th><th>(6)组合危险分数</th><th>(7)存在死亡危险<br>/10万</th><th>(8)改变危险因素</th><th>(9)新危险分数</th><th>(10)新组合危险分数</th><th>(11)新存在死亡危险<br>/10万</th><th>(12)降低量<br>/10万</th><th>(13)占原总危险%</th></tr></thead><tbody id="lesson-full-rows"></tbody></table></div></details>
+    </section>
+    <section class="lesson-age-section" aria-labelledby="lesson-age-title"><div><p class="kicker">表12-3</p><h3 id="lesson-age-title">实际年龄、评价年龄与增长年龄</h3><div id="lesson-ages" class="age-chart"></div><p id="lesson-age-note" class="steps"></p><p class="help">按实际年龄末位选列，用合计危险在相邻两行间内插。增长年龄指改善后危险对应的年龄，两者差值不代表寿命能延长多少。</p></div><details class="process"><summary>查看查表过程</summary><p class="help">采用表12-3男性列中1600—61640的区段（基础年龄24—70岁）。低龄区部分率值重复或不随年龄递增，无法唯一反求年龄；超出本页范围时不计算。</p><div class="lesson-age-legend"><span>当前风险的相邻行</span><span>改善后风险的相邻行</span></div><div class="table-scroll lesson-age-table-wrap"><table class="lesson-age-table"><thead><tr><th>男性合计危险/10万</th><th>所选列的评价年龄</th></tr></thead><tbody id="lesson-age-rows"></tbody></table></div></details></section>
+    <details class="process"><summary>公式与资料来源</summary><div class="formula">X＝Σ<sub>rᵢ&gt;1</sub>(rᵢ−1)，Y＝Π<sub>rᵢ≤1</sub>rᵢ，R＝X＋Y<br>D＝M×R；总危险＝ΣD<br>每项降低量＝当前D−改善后D<br>第13列＝该死因降低量÷原总危险×100%</div><p>先用表12-2查冠心病的单项分数，再在表12-1中计算组合分数和各项危险，最后用合计危险查表12-3，得到评价年龄与增长年龄。</p><ul><li>两张表的例题取值有差别：胆固醇192 mg/dl，表12-1给定0.6，按表12-2内插为0.65；超重30%，表12-1给定1.3，按表12-2的15%与50%两点内插为1.214286。可在页面上方选择取值方式。</li><li>表12-2只列有冠心病的转换参数，其他死因仍需使用各自的系数。相关因素下已补充7篇原始研究的12项数值及原文链接，另列早期HRA分类资料；文献中的OR、HR和预测值保留原义，不自动代入课堂r。</li><li>补充了第5版第137页（PDF第161页）的正文示例：男性40—44岁、每天吸烟20支时，肺癌r＝R＝1.9，D＝202×1.9＝383.8 /10万。该数值不用于其他吸烟量或其他死因。</li><li>第5版第136页将完整统计模型指向配套融合教材。现有纸本、课件和四张补充表未列出心脏杂音“有”、X线“阳性”等情况的转换分数，这些项目仍需对应原表，不能用其他模型的系数代填。</li><li>沿用表12-1给定值时，例题总危险为7167.45 → 3430.35 /10万，降低3737.10 /10万；下降52.1399%，保留一位小数为52.1%。</li><li>核对结果：自杀改善后D＝264×1.5＝396；肺炎改善后R＝1、D＝111。课件照片与第5版部分数值有印刷差异，此处按补充表和算式计算。</li><li>来源：健康风险资料夹中的课堂补充表12-1（第150—151页）、12-2（第153页）、12-3（第154页）；《社会医学》课程课件第163—174页。李鲁《社会医学》第5版对应第11章，表号与补充表不同。</li></ul><p class="help">本页用于课堂练习，所用参数来自教材例题，结果不用于个人诊疗或筛查安排。</p></details>
+    <p class="help lesson-legacy-link"><a href="legacy.html#hra" target="_blank" rel="noopener">旧版生活方式记录备份（非HRA三表计算器）</a>：仅用于打开以前的生活方式资料。当前HRA保存的JSON文件，请用上方“导入已存资料”恢复。</p>
+  </section>
+  <section id="qaly" class="panel" role="tabpanel" aria-labelledby="tab-qaly" hidden>
+    <div class="intro"><div><p class="kicker">课程课件第 139 页</p><h2>质量调整生命年计算</h2><p>按养老院例题，将各健康状态的持续年数乘以相应权重，再求和。</p></div><div class="intro-note">QALY = Σ Y<sub>k</sub>W<sub>k</sub></div></div>
+    <div class="workspace-grid"><div><div class="table-scroll"><table><thead><tr><th>健康状态</th><th>年数 Y</th><th>权重 W</th><th>Y×W</th><th></th></tr></thead><tbody id="qrows"></tbody></table></div><div class="toolbar"><button id="loadq" class="primary">载入课堂例题</button><button id="addrow">添加健康状态</button></div><p id="qerror" class="error" role="status"></p><div id="qsteps" class="steps"></div></div><aside class="score-pane"><h3>质量调整生命年</h3><div class="qaly-number"><strong id="qtotal">—</strong><span>QALY</span></div><p id="ytotal" class="help"></p><div id="qbars"></div><div class="marginal-note"><b>结果说明</b><p>71.6 年是未调整的年数；用题目给定权重计算，结果约为 68.5 QALY。评价健康管理效果时，既要看生存时间，也要看生活质量。</p></div></aside></div>
+    <details class="process"><summary>EQ-5D-3L编码练习</summary><p class="help">对照已有问卷选择等级。这里记录健康状态编码与VAS，不自动计算效用指数。</p><div class="eq-grid" id="eqfields"></div><div class="inline-fields"><label>EQ VAS 自评分（0—100）<input type="number" min="0" max="100" value="75" id="vas"></label><div><span class="help">健康状态编码</span><strong id="eqcode" class="eqcode"></strong></div></div><p id="eqerror" class="error" role="status"></p><p>状态编码、VAS 与效用指数是不同结果。不能用等级相加或 VAS÷100 代替 QALY 的效用权重。</p></details>
+  </section>
+  <section id="notes" class="panel sources" role="tabpanel" aria-labelledby="tab-notes" hidden>
+    <p class="kicker">课程资料</p><h2>计分说明与资料来源</h2>
+    <h3>WHOQOL-100</h3><p>课堂评分说明第8页使用 A—E，正向题计1—5、反向题计5—1。工具按原条目代码 F1.1—F24.4、G1—G4 处理，不按不同译本的页面题序映射。采用完整作答模式：100题齐全后才计算，不自动填补缺失值。</p><ol><li>按课堂表的30个反向条目转向，再把每个方面的4题相加，得4—20分。</li><li>方面标准分＝（转向后方面分−4）÷16×100；同一领域的方面标准分求平均，得领域0—100分。</li><li>这与WHO手册先保留F1、F8、F11的负向原分、进入领域时再做24−方面分的方法，在完整作答时等价；两种流程不能重复反向。</li><li>课堂汇总分＝（生理＋心理＋独立性＋社会关系＋环境）÷5，按课堂评分说明单列。它是课堂约定的五领域均分，不称为WHO推荐的统一总分。</li><li>六领域及G1—G4仍分别呈现，不设诊断界值，也不换算成QALY效用。</li></ol>
+    <p>课堂反向条目共30个：F1.1—F1.4、F2.2、F2.4、F3.2、F3.4、F7.2、F7.3、F8.1—F8.4、F9.3、F9.4、F10.2、F10.4、F11.1—F11.4、F13.1、F15.4、F16.3、F18.2、F18.4、F22.2、F23.2、F23.4。</p>
+    <p>依据：WHO 网站提供的 Australian version: Manual and questionnaires WHOQOL-100 and BREF，第19—22页（PDF第31—34页），含条目代码对应关系及完整领域公式。输入前请与所持量表的条目代码核对。</p>
+    <p><a href="https://www.who.int/tools/whoqol/whoqol-100" target="_blank" rel="noopener">WHOQOL-100 官方资料页</a> · <a href="https://cdn.who.int/media/docs/default-source/publishing-policies/whoqol/english-australia-whoqol-100---bref.zip?sfvrsn=ae797474_2" target="_blank" rel="noopener">WHO 提供的手册原文件（ZIP）</a></p>
+    <h3>健康危险因素评价：计算说明</h3><p>依照课堂补充表12-1至12-3及课件第163—174页计算。填写原始变量后，冠心病按表12-2换算分数，其他死因按表12-1取值；随后计算当前和改善后的组合分数、危险、降低量及占原总危险的比例，最后查表12-3。</p><div class="formula">R＝Σ(rᵢ&gt;1时的rᵢ−1)＋Π(rᵢ≤1时的rᵢ)<br>D＝M×R；总危险＝ΣD<br>第13列＝该死因降低量÷原总危险×100%</div><p>冠心病分数可选择“优先用表12-1给定值”或“按表12-2内插计算”。胆固醇192 mg/dl，给定值为0.6、内插值为0.65；超重30%，给定值为1.3、内插值为1.214286。默认将R保留2位小数后再计算D，也可取消勾选，使用完整精度。</p><p>参数适用于男性40—44岁组，其他人群需补充相应的基准率和转换参数。未知值留空，手填系数需注明来源；12项死因全部完成后，才计算合计危险与对应年龄。</p><p>来源：课堂补充表12-1（第150—151页）、表12-2（第153页）、表12-3（第154页）；课程课件第163—174页。李鲁主编《社会医学》第5版相应算法位于第11章，表11-1至11-3。表号与页码按各自资料区分。</p><p>课堂例题：总危险7167.45 → 3430.35 /10万，降低3737.10 /10万、52.1399%；评价年龄43.4560岁，增长年龄36.2951岁。两种年龄的差值不代表预计延寿年数；例题参数不用于个人诊疗或筛查安排。</p>
+    <h3>QALY 与课堂资料</h3><p>QALY = Σ（持续年数×对应健康权重）；课堂例题 65.2×1＋4.5×0.59＋1.9×0.34＝68.501，课件近似为 68.5。保留负效用输入，但应由相应的正式价值集或题目提供，不能自编换算。</p><p>课程课件《社会医学》：第138—139页为 EQ-5D、QALY 练习，第165—174页为危险分数、内插、死亡危险及年龄对照。</p><p><a href="https://euroqol.org/information-and-support/euroqol-instruments/eq-5d-3l/" target="_blank" rel="noopener">EuroQol：EQ-5D-3L</a> · <a href="https://euroqol.org/information-and-support/resources/value-sets/" target="_blank" rel="noopener">EuroQol：效用价值集</a></p>
+    <h3>答卷与示例</h3><p>页面打开时是空白问卷。“示例答卷”和“示例前后变化”使用模拟答案，只供学习计分，不能当成真实调查或干预结果。答卷在本页计算，不上传。未填完也可以保存为CSV，下次导入继续；刷新后，当前答案、对照和文字记录会清空。</p><p><a href="https://github.com/hanson2017ear/HansonChan.github.io/tree/main/social-medicine" target="_blank" rel="noopener">工具源文件与核对测试</a></p>
+  </section>
+  </div>
+  <section id="application" class="application" aria-labelledby="application-title">
+    <div><p class="kicker">应用或启发</p><h2 id="application-title" class="ai-reveal"><span>算完以后，</span><br><span>想想下一步怎么做。</span></h2><p id="application-hint" class="help"></p><div class="reflection-fields"><label>你注意到了什么？<textarea id="reflection-observation" rows="3" placeholder="可以写具体的发现，也可以记下还没想明白的问题。"></textarea></label><label>接下来可以怎样做？<textarea id="reflection-action" rows="3" placeholder="想改善哪件事？准备怎么做、什么时候再看结果？"></textarea></label></div><div class="toolbar"><button id="reflection-example">看看写法示例</button><button id="export-record" class="primary">导出结果与笔记</button><button id="print-record">打印当前页面</button></div><p id="export-status" class="help" role="status"></p></div>
+    <aside class="qr-block"><img id="tool-qr" src="qr-whoqol.svg" width="118" height="118" alt="生命质量评分工具入口二维码"><p>原版工具入口</p><a id="tool-link" href="https://hanson2017ear.github.io/HansonChan.github.io/social-medicine/#whoqol">打开原版工具</a><small>扫码后可在手机上使用</small></aside>
+  </section>
+  <footer><span>社会医学课程练习 · 蓝色对比版</span><span>答案不上传 · 保存会下载文件，下次需手动导入</span><a href="https://github.com/elayadesign/ai-design-skills" target="_blank" rel="noopener">设计技能来源</a></footer>
+</main>
+<script src="course-data.js?v=20261024"></script><script src="whoqol-questions.js?v=20261024"></script><script src="calc.js?v=20261024"></script><script src="hra-lesson.js?v=20261025save1"></script><script src="app.js?v=20261025save1"></script>
+<script src="ai-design.js?v=20261026a"></script>
+</body></html>
