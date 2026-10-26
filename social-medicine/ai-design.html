@@ -5,18 +5,19 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="填写WHOQOL-100问卷，按课堂表12-1、12-2、12-3计算健康危险因素评价，并复习QALY计算。">
   <title>社会医学课程练习 · 蓝色对比版</title>
+  <meta name="author" content="陈万杰，23360036">
   <meta name="robots" content="noindex">
   <meta name="theme-color" content="#214F7E">
   <link rel="icon" type="image/svg+xml" href="ai-design-mark.svg">
   <link rel="stylesheet" href="style.css?v=20261025save1">
-  <link rel="stylesheet" href="ai-design.css?v=20261026a">
+  <link rel="stylesheet" href="ai-design.css?v=20261027fix1">
 </head>
 <body class="ai-design">
 <a class="skip" href="#workspace">跳到计算区</a>
 <main>
   <header class="masthead ai-masthead">
     <a class="ai-brand" href="#hra"><img src="ai-design-mark.svg" width="40" height="40" alt=""><h1>社会医学<small>课程练习</small></h1></a>
-    <div class="ai-edition"><span>李鲁主编《社会医学》第5版</span><a id="ai-original-link" href="index.html#hra" target="_blank" rel="noopener">打开原版对比</a></div>
+    <div class="ai-edition"><div class="ai-owner"><span>陈万杰 · 23360036</span><small>李鲁主编《社会医学》第5版</small></div><a id="ai-original-link" href="index.html#hra" target="_blank" rel="noopener">打开原版对比</a></div>
   </header>
   <nav role="tablist" aria-label="练习模块">
     <button id="tab-whoqol" role="tab" aria-selected="true" aria-controls="whoqol" data-tab="whoqol">生命质量问卷</button>
@@ -61,7 +62,7 @@
     <div class="intro ai-hra-intro"><div><p class="kicker">社会医学课堂计算</p><h2>健康危险因素评价</h2><p>把当前情况和改善计划放在一起，<br class="ai-desktop-break">看清每项改变对计算结果的影响。</p><div class="ai-scope"><span>男性40—44岁参数</span><span>资料仅在本页计算</span></div></div>
     <figure class="ai-method" aria-label="课堂三表计算关系：原始变量转换为单项危险分数，组合后计算各项危险，最后查对应年龄"><div class="ai-method-top"><span>变量</span><span>单项分数</span><span>组合分数</span><span>危险</span></div><div class="ai-method-flow"><b>x</b><span>→</span><b>r</b><span>→</span><b>R</b><span>→</span><b>D</b></div><figcaption>冠心病：表12-2换算分数<br>各死因：表12-1综合计算<br>合计危险 → 表12-3对应年龄</figcaption></figure></div>
     <ol class="lesson-path" aria-label="计算顺序"><li><b>01</b> 填写变量</li><li><b>02</b> 转换危险分数</li><li><b>03</b> 生成表12-1</li><li><b>04</b> 查表12-3</li></ol>
-    <div class="toolbar"><button id="lesson-demo" class="primary">载入课堂例题</button><button id="lesson-save">保存这次填写</button><label class="file-button">导入已存资料<input id="lesson-import" type="file" accept=".json,application/json"></label><button id="lesson-clear">清空重填</button><button id="lesson-view">查看计算结果</button></div>
+    <div class="toolbar"><button id="lesson-demo" class="primary">载入课堂例题</button><button id="lesson-save" aria-describedby="lesson-save-help">下载 JSON 保存（下次需导入）</button><label class="file-button">导入已存资料<input id="lesson-import" type="file" accept=".json,application/json"></label><button id="lesson-clear">清空重填</button><button id="lesson-view">查看计算结果</button></div>
     <p id="lesson-save-help" class="help">保存会下载JSON文件。刷新或重新打开页面后不会自动恢复；下次请点击“导入已存资料”，选择保存的文件继续填写。</p>
     <p id="lesson-status" class="help" role="status">不知道的当前值可以留空；改善后未填的项目，按当前情况计算。</p>
     <div class="ai-entry-layout">
@@ -118,7 +119,7 @@
     <div><p class="kicker">应用或启发</p><h2 id="application-title" class="ai-reveal"><span>算完以后，</span><br><span>想想下一步怎么做。</span></h2><p id="application-hint" class="help"></p><div class="reflection-fields"><label>你注意到了什么？<textarea id="reflection-observation" rows="3" placeholder="可以写具体的发现，也可以记下还没想明白的问题。"></textarea></label><label>接下来可以怎样做？<textarea id="reflection-action" rows="3" placeholder="想改善哪件事？准备怎么做、什么时候再看结果？"></textarea></label></div><div class="toolbar"><button id="reflection-example">看看写法示例</button><button id="export-record" class="primary">导出结果与笔记</button><button id="print-record">打印当前页面</button></div><p id="export-status" class="help" role="status"></p></div>
     <aside class="qr-block"><img id="tool-qr" src="qr-whoqol.svg" width="118" height="118" alt="生命质量评分工具入口二维码"><p>原版工具入口</p><a id="tool-link" href="https://hanson2017ear.github.io/HansonChan.github.io/social-medicine/#whoqol">打开原版工具</a><small>扫码后可在手机上使用</small></aside>
   </section>
-  <footer><span>社会医学课程练习 · 蓝色对比版</span><span>答案不上传 · 保存会下载文件，下次需手动导入</span><a href="https://github.com/elayadesign/ai-design-skills" target="_blank" rel="noopener">设计技能来源</a></footer>
+  <footer><span>课程作业 · 陈万杰 · 学号23360036</span><span>答案不上传 · 保存会下载文件，下次需手动导入</span><a href="https://github.com/elayadesign/ai-design-skills" target="_blank" rel="noopener">设计技能来源</a></footer>
 </main>
 <script src="course-data.js?v=20261024"></script><script src="whoqol-questions.js?v=20261024"></script><script src="calc.js?v=20261024"></script><script src="hra-lesson.js?v=20261025save1"></script><script src="app.js?v=20261025save1"></script>
 <script src="ai-design.js?v=20261026a"></script>
