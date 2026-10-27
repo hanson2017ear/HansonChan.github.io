@@ -42,7 +42,7 @@
       for (const metric of metrics.children) output.append(metric.cloneNode(true));
     } else {
       const empty = document.createElement('p'); empty.className = 'ai-empty-note';
-      empty.textContent = '先填写左侧变量，或载入课堂例题看看。资料不全的项目会留空，不记作0。'; output.append(empty);
+      empty.textContent = '尚无完整结果。补齐资料后显示合计；空白不计为0。'; output.append(empty);
     }
   }
   const observe = (id, update, options) => new MutationObserver(update).observe(byId(id), options);
@@ -59,11 +59,4 @@
   document.querySelectorAll('[data-tab]').forEach(button => button.addEventListener('click', moduleChanged));
   if (!location.hash) byId('tab-hra').click();
   requestAnimationFrame(() => window.scrollTo({top:0, behavior:'instant'}));
-  const phrases = [...document.querySelectorAll('.ai-reveal span')];
-  if ('IntersectionObserver' in window) {
-    const reveal = new IntersectionObserver(entries => entries.forEach(entry => {
-      if (entry.isIntersecting) { entry.target.classList.add('is-visible'); reveal.unobserve(entry.target); }
-    }), {threshold:1, rootMargin:'0px 0px -8% 0px'});
-    phrases.forEach(phrase => reveal.observe(phrase));
-  } else phrases.forEach(phrase => phrase.classList.add('is-visible'));
 })();

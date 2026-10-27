@@ -16,7 +16,7 @@ body.ai-design{font-family:Geist,"Microsoft YaHei","PingFang SC",sans-serif;font
 .ai-edition{display:flex;align-items:center;gap:24px;font-size:12px;line-height:20px;color:var(--muted)}
 .ai-owner{text-align:right;white-space:nowrap;font-size:14px;line-height:20px;color:var(--ink)}.ai-owner span{display:block}.ai-owner small{margin-top:4px;font-size:12px;line-height:16px}
 .ai-edition a{border:1px solid var(--line);padding:8px 12px;border-radius:8px;font-size:14px;line-height:20px;text-decoration:none;background:#fff;color:var(--green);font-weight:600}
-.ai-design nav[role=tablist]{position:static;display:flex;width:fit-content;max-width:100%;margin:0 auto 32px;padding:8px;gap:4px;overflow:auto;border:1px solid #ffffff;background:#ffffffeb;backdrop-filter:blur(16px);border-radius:16px;box-shadow:0 4px 24px #1f3a5710}
+.ai-design nav[role=tablist]{position:static;display:flex;width:100%;max-width:100%;margin:0 0 32px;padding:8px;gap:4px;overflow:auto;border:1px solid var(--line);background:#fff;border-radius:8px;box-shadow:none}
 .ai-design nav button{border:0;border-radius:8px;padding:8px 16px;font-size:14px;line-height:20px;font-weight:500;white-space:nowrap;color:var(--muted)}
 .ai-design nav button[aria-selected=true]{background:var(--green);color:#fff;font-weight:600}
 .ai-design nav button:hover:not([aria-selected=true]){background:#edf2f8;color:var(--ink)}
@@ -31,7 +31,7 @@ body.ai-design{font-family:Geist,"Microsoft YaHei","PingFang SC",sans-serif;font
 .ai-design .toolbar{gap:8px;margin:16px 0}
 .ai-design .intro{padding:24px 0 32px;margin:0;gap:32px;align-items:center}
 .ai-design .intro>div:first-child{max-width:680px}
-.ai-design .intro h2{background:linear-gradient(90deg,#000,#666);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.ai-design .intro h2{color:var(--ink)}
 .ai-design .intro>div>p:not(.kicker){font-size:16px;line-height:24px;max-width:680px;margin:0;color:var(--muted)}
 .ai-design .intro-note{border:1px solid var(--line);background:#fff;border-radius:12px;padding:16px 24px;min-width:0;font-size:12px;line-height:24px;color:var(--muted)}
 .ai-scope{display:flex;gap:16px;margin-top:24px;font-size:12px;line-height:16px;color:var(--muted)}
@@ -141,9 +141,8 @@ body.ai-design{font-family:Geist,"Microsoft YaHei","PingFang SC",sans-serif;font
 .ai-design .sources h3{font-size:20px;line-height:28px;margin-top:32px}
 .ai-design .sources p,.ai-design .sources li{font-size:14px;line-height:24px}
 .ai-design .formula{font-family:inherit;font-size:18px;line-height:28px;background:#edf2f8;border-radius:8px;padding:24px;margin:24px 0}
-.ai-design .application{border:0;background:#e5edf7;border-radius:16px;padding:40px;margin:32px 0;gap:40px;grid-template-columns:minmax(0,1fr) 160px}
-.ai-design .application h2{font-size:36px;line-height:40px;margin:16px 0 24px;max-width:680px}
-.ai-reveal span{opacity:.3;transition:opacity 700ms var(--ai-curve)}.ai-reveal span.is-visible{opacity:1}
+.ai-design .application{border:1px solid var(--line);background:#fff;border-radius:12px;padding:32px;margin:32px 0;gap:32px;grid-template-columns:minmax(0,1fr) 160px}
+.ai-design .application h2{font-size:24px;line-height:32px;margin:0 0 16px;max-width:680px}
 .ai-design .reflection-fields{gap:16px;margin:24px 0}.ai-design .reflection-fields label{font-size:14px;line-height:20px;gap:8px}
 .ai-design .qr-block{font-size:12px;line-height:20px;align-self:end}.ai-design .qr-block img{background:#fff;padding:8px;box-sizing:content-box;border-radius:8px;width:112px;height:112px}
 .ai-design footer{font-size:12px;line-height:20px;gap:24px;align-items:center;padding:24px 0 0;border:0}.ai-design footer a{white-space:nowrap}

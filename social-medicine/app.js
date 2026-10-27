@@ -34,13 +34,13 @@ function renderWhoFields(){
         input.checked=letter(raw[key])===value;input.setAttribute('aria-label',key+' '+value+' '+text);
         input.addEventListener('change',()=>{
           raw[key]=value;if(whoMode.includes('示例'))whoMode='修改后的示例答卷';
-          field.classList.add('answered');put('who-navigation-note','');put('who-save-status','答案有改动，离开前请保存。');updateWho();
+          field.classList.add('answered');put('who-navigation-note','');put('who-save-status','答案已修改，尚未下载保存。');updateWho();
         });
         label.append(input,el('span',value,'option-letter'),el('span',text,'option-text'));options.append(label);
       });
       field.classList.toggle('answered',letter(raw[key])!=='');field.append(options);
       const clear=el('button','暂不回答','answer-clear');clear.type='button';clear.setAttribute('aria-label',key+' 暂不回答');
-      clear.onclick=()=>{raw[key]='';field.querySelectorAll('input').forEach(n=>n.checked=false);field.classList.remove('answered');put('who-save-status','答案有改动，离开前请保存。');updateWho()};field.append(clear);section.append(field);
+      clear.onclick=()=>{raw[key]='';field.querySelectorAll('input').forEach(n=>n.checked=false);field.classList.remove('answered');put('who-save-status','答案已修改，尚未下载保存。');updateWho()};field.append(clear);section.append(field);
     });$('who-fields').append(section);
   });
   showWhoGroup(whoGroupIndex);
@@ -124,12 +124,12 @@ function loadWho(followup=false){
 CourseData.facets.forEach(f=>{const option=el('option',f.id+' '+f.name);option.value=f.id;$('who-facet').append(option)});
 $('who-facet').value='F3';$('who-facet').onchange=updateWhoSteps;
 $('who-demo').onclick=()=>loadWho();$('who-followup').onclick=()=>loadWho(true);
-$('who-clear').onclick=()=>{if(!replaceWhoAllowed())return;raw={};whoMode='自行填写的答卷';reference=null;whoGroupIndex=0;renderWhoFields();updateWho();put('who-save-status','离开前请保存答卷。未填完也可以保存，下次导入后接着填。');put('who-navigation-note','')};
+$('who-clear').onclick=()=>{if(!replaceWhoAllowed())return;raw={};whoMode='自行填写的答卷';reference=null;whoGroupIndex=0;renderWhoFields();updateWho();put('who-save-status','点击“保存答卷”下载CSV文件。未答完也可下载，下次导入后继续；刷新不会自动恢复。');put('who-navigation-note','')};
 $('who-group').onchange=()=>showWhoGroup(Number($('who-group').value));
 $('who-prev').onclick=()=>showWhoGroup(whoGroupIndex-1,true);
 $('who-next').onclick=()=>whoGroupIndex===24?reviewWho():showWhoGroup(whoGroupIndex+1,true);
 $('who-review').onclick=reviewWho;
-$('who-save').onclick=()=>{download('item,score\n'+CourseData.itemIds.map(id=>id+','+letter(raw[id])).join('\n'),'WHOQOL100_答卷.csv','text/csv');put('who-save-status','答卷已准备下载。保存好这个CSV文件，下次导入即可继续填写。')};
+$('who-save').onclick=()=>{download('item,score\n'+CourseData.itemIds.map(id=>id+','+letter(raw[id])).join('\n'),'WHOQOL100_答卷.csv','text/csv');put('who-save-status','已发起CSV下载。下次点击“导入答卷”恢复，刷新不会自动续填。')};
 $('who-reference').onclick=()=>{if(whoResult){reference={result:copy(whoResult),mode:whoMode};updateWho()}};
 $('who-unreference').onclick=()=>{reference=null;updateWho()};
 $('who-template').onclick=()=>download('item,score\n'+CourseData.itemIds.map(id=>id+',').join('\n'),'WHOQOL100_原始答案模板.csv','text/csv');
@@ -181,7 +181,7 @@ function showTab(name){
   document.querySelectorAll('[data-tab]').forEach(n=>{const selected=n.dataset.tab===name;n.setAttribute('aria-selected',String(selected));n.tabIndex=selected?0:-1});
   document.querySelectorAll('.panel').forEach(n=>n.hidden=n.id!==name);$('application').hidden=name==='notes';
   if(reflections[name]){$('reflection-observation').value=reflections[name].observation;$('reflection-action').value=reflections[name].action}
-  const hints={whoqol:'哪些方面的分数值得进一步了解？如果要做健康管理，还需要问清楚哪些生活情况？',hra:'试着只改一项，比如体力活动，看看哪些结果跟着变了。',qaly:'可以记下年数和权重各自怎样影响结果，以及题目中的权重来自哪里。'};
+  const hints={whoqol:'记录得分较低的方面，并结合睡眠、精力和日常活动分析原因。',hra:'比较各项改善后的变化，记录影响较大的因素。',qaly:'记录持续年数、权重来源及其对计算结果的影响。'};
   put('application-hint',hints[name]||'');put('export-status','');
   if(name!=='notes'){$('tool-qr').src='qr-'+name+'.svg';$('tool-qr').alt=name==='hra'?'危险因素评价工具入口二维码':name==='qaly'?'QALY练习入口二维码':'生命质量评分工具入口二维码';$('tool-link').href=online+'#'+name}
   updateExportState();
@@ -204,22 +204,22 @@ window.addEventListener('beforeprint',()=>{
 $('reflection-example').onclick=()=>{
   let observation,action;
   if(currentTab==='whoqol'){
-    observation='例如，体检没有明显异常，也可能有睡不好、白天容易累的困扰。看具体方面的分数，比只看平均分更容易发现这些情况。';
-    action='如果想先改善白天疲劳，可以了解作息、宿舍噪声和课业压力，和本人商量一个做得到的调整，约好时间后用同一版本问卷复评。这里的例子没有实际干预数据。';
+    observation='记录示例：体检未见明显异常时，睡眠和精力方面仍可能得分较低，需要结合具体作答了解情况。';
+    action='先了解作息、宿舍噪声和课业压力，选择可实行的调整措施，约定时间后使用同一版本问卷复评。此处为记录示例，无实际干预数据。';
   }else if(currentTab==='hra'){
     const r=HraLesson.result;
-    observation=r?.complete?'这次计算的总危险由'+fmt(r.before)+'变为'+fmt(r.after)+' /10万。对照各项结果，可以看看哪些改变的影响较大。':'先载入课堂例题，试着改一项数值，看看它会影响哪些结果。';
-    action='我可以先只改体力活动，再分别调整其他因素，比较每次的差别。';
+    observation=r?.complete?'本次总危险由'+fmt(r.before)+'变为'+fmt(r.after)+' /10万。各死因的降低量见结果表。':'填写资料或载入课堂例题后，记录总危险及各死因的变化。';
+    action='分别调整体力活动、体重等因素，比较每项改变带来的差异。';
   }else{
-    observation=qResult?'这次输入的年数合计为'+fmt(qResult.years)+'年，质量调整后为'+fmt(qResult.qaly,3)+' QALY。改动权重后，可以看到生活状态怎样影响结果。':'评价健康效果时，除了活了多少年，还要考虑这些年的健康状态。';
+    observation=qResult?'本次持续年数合计为'+fmt(qResult.years)+'年，质量调整后为'+fmt(qResult.qaly,3)+' QALY。相同持续年数下，权重越低，质量调整生命年越少。':'评价健康效果时，除了活了多少年，还要考虑这些年的健康状态。';
     action='比较两种方案前，需要核对各自的持续时间和权重来源。若用EQ-5D效用值，应注明版本和价值集，不能把VAS或WHOQOL领域分直接填成效用权重。';
   }
-  $('reflection-observation').value=observation;$('reflection-action').value=action;saveReflection();put('export-status','已放入写法示例。提交作业时，请换成自己的实际观察和想法。');
+  $('reflection-observation').value=observation;$('reflection-action').value=action;saveReflection();put('export-status','已填入记录示例，请按本次结果修改。');
 };
 function recordText(){
   const lines=['社会医学课程练习记录',new Date().toLocaleString('zh-CN'),''];
   if(currentTab==='whoqol'){
-    if(!whoResult)throw Error('先补齐有效的100题');lines.push('WHOQOL-100 / '+whoMode,'课堂口径：30个反向条目；方面标准分后求领域均值。');
+    if(!whoResult)throw Error('先补齐有效的100题');lines.push('WHOQOL-100 / '+whoMode,'计分方法：30个反向条目；计算方面标准分后求领域均值。');
     whoResult.domains.forEach((d,i)=>lines.push(d.name+'：'+fmt(d.score100,4)+'/100（4—20分制：'+fmt(d.score,4)+'）'+(reference?'；对照'+fmt(reference.result.domains[i].score100,4)+'；变化'+fmt(d.score100-reference.result.domains[i].score100,4):'')));
     lines.push('课堂五领域均分：'+fmt(whoResult.classSummary,4)+'；排除精神信仰领域及G1—G4，不称为WHO统一总分。','G1—G4：'+whoResult.general.items.map(i=>i.id+'='+letter(i.original)).join('，'),'','各方面的计分');
     whoResult.facets.forEach(f=>lines.push(f.id+' '+f.name+'：'+f.items.map(i=>i.id+' '+letter(i.original)+(i.classReversed?'反向':'')+'→'+i.classScored).join('；')+'；转向后合计'+f.positive+'；标准分'+fmt(f.score100,4)));
@@ -230,7 +230,7 @@ function recordText(){
   }else{
     if(!qResult)throw Error('先填写有效QALY数据');lines.push('QALY：Σ（持续年数×权重）',...qResult.parts.map(r=>(r.name||'未命名状态')+'：'+r.years+'×'+r.weight+'='+fmt(r.weighted,6)),'未调整年数：'+fmt(qResult.years,6),'QALY：'+fmt(qResult.qaly,6),'权重采用本次输入值，未进行量表效用换算。','来源：课程课件第139页。');
   }
-  saveReflection();const r=reflections[currentTab];lines.push('','应用或启发','我从结果中看到什么：',r.observation||'（未填写）','可以怎么做、怎样再评价：',r.action||'（未填写）','',online+'#'+currentTab);return lines.join('\n');
+  saveReflection();const r=reflections[currentTab];lines.push('','应用或启发','结果与发现：',r.observation||'（未填写）','后续计划与复评：',r.action||'（未填写）','',online+'#'+currentTab);return lines.join('\n');
 }
 function download(text,name,type='text/plain'){
   const url=URL.createObjectURL(new Blob(['\ufeff'+text],{type:type+';charset=utf-8'})),a=el('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
